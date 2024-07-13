@@ -16,6 +16,7 @@ minimal_mistakes_skin    : "contrast" # "default, "air", "aqua", "contrast", "da
 
 # Site Settings
 locale                   : "en-GB"
+host                     : "0.0.0.0" # needed for local docker setup, check if working on gitlab.com
 title                    : "MagicMirror²"
 title_separator          : "-"
 subtitle                 : # site tagline that appears below site title in masthead

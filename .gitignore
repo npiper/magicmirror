@@ -2,3 +2,4 @@
 mounts/
 run/docker-compose.yml
 Gemfile*
+pages/_site

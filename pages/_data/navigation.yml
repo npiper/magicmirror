@@ -3,6 +3,8 @@ main:
     url: /installation/
   - title: "Configuration"
     url: /configuration/
+  - title: "Yaml files for docker"
+    url: /compose/server
   - title: "Docker Images"
     url: /images/
   - title: "FAQ"
