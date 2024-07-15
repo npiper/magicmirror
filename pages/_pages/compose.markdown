@@ -7,6 +7,28 @@ Please choose from
     <option value="{{ site.baseurl }}/compose/client" {%if page.data == "client" %}selected{% endif %}>client-only</option>
 </select>:
 
+<input type="radio" id="server" name="cbxType" value="server"><label for="server">server-only</label>
+<input type="radio" id="rpi" name="cbxType" value="rpi"><label for="rpi">raspberry pi</label>
+<input type="radio" id="client" name="cbxType" value="client"><label for="client">client-only</label>
+
+
 ```yaml
 {% include_relative compose/{{ page.data }}.yaml %}
 ```
+
+<!-- 
+<script type="text/javascript" src="/assets/js/post_oeffnungszeiten.js"></script>
+
+
+to choose:
+- rpi
+- server
+- client
+options:
+- imageTag
+- initContainer
+- privileged
+- network_mode or port
+- ip and port for client
+- mmpm
+ -->
