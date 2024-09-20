@@ -10,7 +10,7 @@ Many modules are working out of the box with this docker setup. But if you want 
 
 ## Install module MMM-Pir-Sensor-Lite
 
-Start the container and login with `docker exec -it mm bash`. Navigate to the `modules` folder and clone [MMM-PIR-Sensor-Lite](https://github.com/grenagit/MMM-PIR-Sensor-Lite.git) with `git clone https://github.com/grenagit/MMM-PIR-Sensor-Lite.git`. Now `cd` into the new folder `MMM-PIR-Sensor-Lite` and run `npm install`.
+Start the container and login with `docker exec -it mm bash`. Navigate to the `config` folder and clone [MMM-PIR-Sensor-Lite](https://github.com/grenagit/MMM-PIR-Sensor-Lite.git) with `git clone https://github.com/grenagit/MMM-PIR-Sensor-Lite.git`. Now `cd` into the new folder `MMM-PIR-Sensor-Lite` and run `npm install`.
 
 ## Configure MMM-PIR-Sensor-Lite
 
@@ -76,7 +76,7 @@ Test if you can activate/deactivate the monitor by running:
 
 Test if your PIR-Sensor is working by running:
 
-`python3 -u modules/MMM-PIR-Sensor-Lite/pir.py 23` where `23` is the used GPIO pin.
+`python3 -u config/MMM-PIR-Sensor-Lite/pir.py 23` where `23` is the used GPIO pin.
 
 Output should look like
 

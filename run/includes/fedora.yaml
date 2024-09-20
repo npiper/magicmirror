@@ -3,8 +3,6 @@ services:
     image: karsten13/magicmirror:fedora
     volumes:
       - ../../mounts/config:/opt/magic_mirror/config:z
-      - ../../mounts/modules:/opt/magic_mirror/modules:z
-      - ../../mounts/css:/opt/magic_mirror/css:z
       - /tmp/.X11-unix:/tmp/.X11-unix:z
     privileged: true
     environment:

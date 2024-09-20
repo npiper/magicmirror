@@ -30,8 +30,8 @@ RUN set -e; \
 USER node
 
 ENV NODE_ENV=production \
-    MM_OVERRIDE_DEFAULT_MODULES=true \
-    MM_OVERRIDE_CSS=true
+    MM_MODULES_DIR="config" \
+    MM_CUSTOMCSS_FILE="config/custom.css"
 
 EXPOSE 8080
 

@@ -46,10 +46,7 @@ RUN set -e; \
     cat package.json; \
     sed -i "s:address\: \"localhost\":address\: \"0.0.0.0\":" config/config.js.sample; \
     sed -i "s:ipWhitelist\: \[.*\],:ipWhitelist\: \[\],:" config/config.js.sample; \
-    mkdir mount_ori; \
-    mv modules mount_ori/; \
-    mv config mount_ori/; \
-    mv css mount_ori/; \
+    mv config config_ori/; \
     # remove not needed node_modules stuff
     [ "${dev}" = "dn" ] && node-prune || echo "no node-prune"; \
     cp /tmp/build_info.sh .; \

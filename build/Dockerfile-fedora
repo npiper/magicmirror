@@ -30,8 +30,8 @@ ARG NODE_ENV
 ENV ELECTRON_DISABLE_SANDBOX=1 \
     DBUS_SESSION_BUS_ADDRESS="unix:path=/var/run/dbus/system_bus_socket" \
     NODE_ENV=${NODE_ENV} \
-    MM_OVERRIDE_DEFAULT_MODULES=true \
-    MM_OVERRIDE_CSS=true
+    MM_MODULES_DIR="config" \
+    MM_CUSTOMCSS_FILE="config/custom.css"
 
 EXPOSE 8080
 

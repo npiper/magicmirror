@@ -111,16 +111,6 @@ services:
         target: /opt/magic_mirror/config
         bind:
           create_host_path: true
-      - type: bind
-        source: /mnt/z/k13/magicmirror/mounts/modules
-        target: /opt/magic_mirror/modules
-        bind:
-          create_host_path: true
-      - type: bind
-        source: /mnt/z/k13/magicmirror/mounts/css
-        target: /opt/magic_mirror/css
-        bind:
-          create_host_path: true
 networks:
   default:
     name: run_default
@@ -133,8 +123,6 @@ docker run  -d \
     --publish 8080:8080 \
     --restart unless-stopped \
     --volume ~/magicmirror/mounts/config:/opt/magic_mirror/config \
-    --volume ~/magicmirror/mounts/modules:/opt/magic_mirror/modules \
-    --volume ~/magicmirror/mounts/css:/opt/magic_mirror/css \
     --name mm \
     karsten13/magicmirror:latest
 ```
@@ -199,27 +187,27 @@ Example log of module MMM-quote-of-the-day:
 [22.07.2021 12:16.03.474] [LOG]   Loading module helpers ...
 [22.07.2021 12:16.03.497] [ERROR] WARNING! Could not load config file. Starting with default configuration. Error found: Error: Cannot find module 'request'
 Require stack:
-- /opt/magic_mirror/modules/MMM-quote-of-the-day/node_helper.js
+- /opt/magic_mirror/config/MMM-quote-of-the-day/node_helper.js
 - /opt/magic_mirror/js/app.js
 - /opt/magic_mirror/serveronly/index.js
 [22.07.2021 12:16.03.499] [LOG]   Loading module helpers ...
 [22.07.2021 12:16.03.504] [ERROR] Whoops! There was an uncaught exception...
 [22.07.2021 12:16.03.514] [ERROR] Error: Cannot find module 'request'
 Require stack:
-- /opt/magic_mirror/modules/MMM-quote-of-the-day/node_helper.js
+- /opt/magic_mirror/config/MMM-quote-of-the-day/node_helper.js
 - /opt/magic_mirror/js/app.js
 - /opt/magic_mirror/serveronly/index.js
 ````
 
 To get your MagicMirror running you can use the following workaround:
 - if your container doesn't start see the section above
-- login into the container with `docker exec -it mm bash` and navigate into the folder of the module, e.g. `cd modules/MMM-quote-of-the-day`
+- login into the container with `docker exec -it mm bash` and navigate into the folder of the module, e.g. `cd config/MMM-quote-of-the-day`
 - check with `ls -la` if the folder contains a file `package.json`, if not run `npm init -y`
 - run `npm install request`
 
 After this manual install of `request` the module should work.
 
-This fix is persistent because the `modules` folder is mounted to the host. If you do a fresh install of such a module you have to repeat this procedure.
+This fix is persistent because the `config` folder is mounted to the host. If you do a fresh install of such a module you have to repeat this procedure.
 
 ## Running on a raspberry pi ends with a white or black screen after a while
 

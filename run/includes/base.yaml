@@ -3,8 +3,6 @@ services:
     image: ${MM_IMAGE}
     volumes:
       - ../../mounts/config:/opt/magic_mirror/config
-      - ../../mounts/modules:/opt/magic_mirror/modules
-      - ../../mounts/css:/opt/magic_mirror/css
   base_init:
     depends_on:
       init:
@@ -13,8 +11,6 @@ services:
       service: base
   server_no:
     environment:
-      MM_OVERRIDE_DEFAULT_MODULES: ${MM_OVERRIDE_DEFAULT_MODULES}
-      MM_OVERRIDE_CSS: ${MM_OVERRIDE_CSS}
       MM_SHOW_CURSOR: ${MM_SHOW_CURSOR}
       MM_SCENARIO: ${MM_SCENARIO}
     ports:
@@ -39,8 +35,6 @@ services:
       - /dev/vchiq
     environment:
       DISPLAY: unix:0.0
-      MM_OVERRIDE_DEFAULT_MODULES: ${MM_OVERRIDE_DEFAULT_MODULES}
-      MM_OVERRIDE_CSS: ${MM_OVERRIDE_CSS}
       MM_SHOW_CURSOR: ${MM_SHOW_CURSOR}
       MM_SCENARIO: ${MM_SCENARIO}
     network_mode: host

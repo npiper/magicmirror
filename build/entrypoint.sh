@@ -1,10 +1,7 @@
 #!/bin/sh
 
 base="/opt/magic_mirror"
-modules_dir="${base}/modules"
-default_dir="${modules_dir}/default"
 config_dir="${base}/config"
-css_dir="${base}/css"
 
 _info() {
   echo "[entrypoint $(date +%T.%3N)] [INFO]   $1"
@@ -18,7 +15,7 @@ _start_mm() {
   if [ "$(id -u)" = "0" ]; then
     _info "running as root but starting the magicmirror process with uid=1000"
     # directories must be writable by user node:
-    chown -R node:node ${modules_dir} ${config_dir} ${css_dir}
+    chown -R node:node ${config_dir}
     _file="mm.env"
     rm -f $_file
     echo "export START_CMD=\"$@\"" > $_file
@@ -34,14 +31,12 @@ _start_mm() {
 }
 
 # directories should be mounted, if not, create them:
-mkdir -p ${modules_dir}
 mkdir -p ${config_dir}
-mkdir -p ${css_dir}
 
 if [ "$STARTENV" = "init" ]; then
-  _info "change permissions for folders modules, config, css ..."
-  chown -R ${MM_UID}:${MM_GID} ${modules_dir} ${config_dir} ${css_dir}
-  chmod -R ${MM_CHMOD} ${modules_dir} ${config_dir} ${css_dir}
+  _info "change permissions for folder config ..."
+  chown -R ${MM_UID}:${MM_GID} ${config_dir}
+  chmod -R ${MM_CHMOD} ${config_dir}
   _info "done."
 
   exit 0
@@ -65,39 +60,10 @@ if [ -z "$TZ" ]; then
   _info "***WARNING*** could not set timezone, please set TZ variable in compose.yaml, see https://khassel.gitlab.io/magicmirror/configuration/#timezone"
 fi
 
-if [ ! -d "${default_dir}" ]; then
-  MM_OVERRIDE_DEFAULT_MODULES=true
-  mkdir -p ${default_dir}
-fi
-
-if [ "${MM_OVERRIDE_DEFAULT_MODULES}" = "true" ]; then
-  if [ -w "${default_dir}" ]; then
-    _info "copy default modules"
-    rm -rf ${default_dir}
-    mkdir -p ${default_dir}
-    cp -r ${base}/mount_ori/modules/default/. ${default_dir}/
-  else
-    _error "No write permission for ${default_dir}, skipping copying default modules"
-  fi
-fi
-
-[ ! -f "${css_dir}/main.css" ] && MM_OVERRIDE_CSS=true
-
-if [ "${MM_OVERRIDE_CSS}" = "true" ]; then
-  if [ -w "${css_dir}" ]; then
-    _info "copy css files"
-    cp ${base}/mount_ori/css/* ${css_dir}/
-    # create css/custom.css file https://github.com/MagicMirrorOrg/MagicMirror/issues/1977
-    [ ! -f "${css_dir}/custom.css" ] && touch ${css_dir}/custom.css
-  else
-    _error "No write permission for ${css_dir}, skipping copying css files"
-  fi
-fi
-
 if [ ! -f "${config_dir}/config.js" ]; then
   if [ -w "${config_dir}" ]; then
     _info "copy default config.js"
-    cp ${base}/mount_ori/config/config.js.sample ${config_dir}/config.js
+    cp ${base}/config_ori/config.js.sample ${config_dir}/config.js
   else
     _error "No write permission for ${config_dir}, skipping copying config.js"
   fi
@@ -122,7 +88,7 @@ if [ "$STARTENV" = "test" ]; then
 
   cd ${base}
 
-  echo "/mount_ori/**/*" >> .prettierignore
+  echo "/config_ori/**/*" >> .prettierignore
   npm run test:prettier
   npm run test:js
   npm run test:css
