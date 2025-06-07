@@ -19,7 +19,7 @@ variables:
   NODE_VERSION_MASTER: "22"
   NODE_VERSION_DEVELOP: "24"
   DEBIAN_VERSION_MASTER: "bookworm"
-  DEBIAN_VERSION_DEVELOP: "bookworm"
+  DEBIAN_VERSION_DEVELOP: "trixie"
   GITREPO_NAME: "MagicMirrorOrg/MagicMirror"
   GITREPO_URL: "https://github.com/${GITREPO_NAME}.git"
   TOOLBOX_IMG: "${CI_REGISTRY}/khassel/container/toolbox:latest"

@@ -11,7 +11,8 @@ build_labwc:
     DOCKERFILE_DIR: "./build/labwc"
     GIT_DEPTH: 1
     REGISTRY: "docker"
-    BUILDKIT_ARGS: "--opt platform=linux/amd64,linux/arm64,linux/arm/v7"
+    # todo: change DEBIAN_VERSION if trixie becomes standard for master
+    BUILDKIT_ARGS: "--opt platform=linux/amd64,linux/arm64,linux/arm/v7 --opt build-arg:DEBIAN_VERSION=$DEBIAN_VERSION_DEVELOP"
   script:
     - |
       if [ "${CI_COMMIT_BRANCH}" = "master" ]; then

@@ -1,4 +1,5 @@
-FROM debian:trixie-slim
+ARG DEBIAN_VERSION
+FROM debian:${DEBIAN_VERSION}-slim
 
 LABEL maintainer="Karsten Hassel"
 
