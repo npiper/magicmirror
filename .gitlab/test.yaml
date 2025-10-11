@@ -30,7 +30,7 @@ test_electron_rebuild:
   stage: test
   variables:
     GIT_STRATEGY: none
-  image: nikolaik/python-nodejs:python3.13-nodejs${NODE_VERSION_DEVELOP}
+  image: nikolaik/python-nodejs:python3.14-nodejs${NODE_VERSION_DEVELOP}-bookworm
   script:
     - |
       apt-get update
