@@ -71,9 +71,12 @@ echo 'exec "$@"' >> /usr/local/bin/sudo
 chmod +x *.sh /usr/local/bin/sudo
 git config --system --add safe.directory $MM_DIR
 git config core.fileMode false
-groupadd --gid 105 render
-groupadd --gid 993 gpio
-usermod -a -G gpio,video,render node
+# different group bookworm vs trixie
+groupadd -g 105 renderb
+groupadd -g 992 rendert
+groupadd -g 993 gpiob
+groupadd -g 986 gpiot
+usermod -a -G gpiob,gpiot,video,renderb,rendert node
 ./build_info.sh "Runtime" "$GIT_INFO"
 rm -f build_info.sh
 EOF
