@@ -32,6 +32,7 @@ _checkparams "$1"
 base="$(dirname $(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd))"
 branch=$(git rev-parse --abbrev-ref HEAD)
 _sudo=""
+_uid="$(id -u)"
 
 _info "--> Installing docker"
 
@@ -50,7 +51,7 @@ else
   _sudo="sudo"
 fi
 
-if [[ -d "/run/systemd" ]]; then
+if [[ -d "/run/systemd" && "$_uid" == "0" ]]; then
   for ((i=1;i<=20;i++)); do
     if [[ -f "/run/systemd/timesync/synchronized" ]]; then
       break
@@ -100,16 +101,18 @@ _info "--> Pulling container images and starting magicmirror"
 
 # use up so mm can start if there are already local images
 $_sudo docker compose up -d
-# pull new images
-$_sudo docker compose pull
-# restart (only if new images pulled)
-$_sudo docker compose up -d
+
+if [[ "$_uid" == "0" ]]; then
+  # pull new images
+  $_sudo docker compose pull
+  # restart (only if new images pulled)
+  $_sudo docker compose up -d
+  # cleanup when running as root
+  $_sudo docker image prune -f
+fi
 
 if [[ "$_sudo" == "sudo" ]]; then
   _info "--> Reboot needed, starting in 20 sec. (use ctrl-c to skip)"
   sleep 20
   sudo reboot now
 fi
-
-# cleanup
-$_sudo docker image prune -f
