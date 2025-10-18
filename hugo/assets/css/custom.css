@@ -1,0 +1,9 @@
+/* a, a.hover {
+  color: #c97c2e;
+} */
+
+:root {
+  --primary-hue: 30deg;
+  --primary-saturation: 90%;
+  --primary-lightness: 50%;
+}

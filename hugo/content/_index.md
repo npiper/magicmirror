@@ -1,8 +1,11 @@
 ---
-title: Introduction
+# title: MagicMirror² Container Setup
+toc: false
+cascade:
+  type: docs
 ---
 
-![MagicMirror²: The open source modular smart mirror platform. ](./src/header.png)
+![MagicMirror²: The open source modular smart mirror platform. ](./images/header.png)
 
 # MagicMirror²
 

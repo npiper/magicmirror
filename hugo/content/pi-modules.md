@@ -1,5 +1,7 @@
 ---
 title: Pi Related Modules
+weight: 4
+breadcrumbs: false
 ---
 
 Many modules are working out of the box with this container setup. But if you want to use modules which needs hardware of the raspberry pi the setup can be tricky.

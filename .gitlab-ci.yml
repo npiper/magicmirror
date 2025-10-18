@@ -13,6 +13,7 @@ default:
 
 variables:
   GIT_DEPTH: 1
+  TZ: "Europe/Berlin"
   MAGICMIRROR_VERSION: "v2.33.0"
   NODE_VERSION_MASTER: "22"
   NODE_VERSION_DEVELOP: "24"
@@ -47,17 +48,20 @@ variables:
 
 pages:
   stage: build
-  image: node:${NODE_VERSION_MASTER}-alpine
+  image: hugomods/hugo:latest
   script:
     - |
-      apk add gojq bash
-      cd pages
-      chmod +x replacevars
-      npm i
-      node --run build:ci
+      cd hugo
+      export HUGO_PARAMS_MAGICMIRROR="$MAGICMIRROR_VERSION"
+      export HUGO_PARAMS_NODEMASTER="$NODE_VERSION_MASTER"
+      export HUGO_PARAMS_NODEDEVELOP="$NODE_VERSION_DEVELOP"
+      export HUGO_PARAMS_DEBIANMASTER="$DEBIAN_VERSION_MASTER"
+      export HUGO_PARAMS_DEBIANDEVELOP="$DEBIAN_VERSION_DEVELOP"
+      hugo build --minify --baseURL https://khassel.gitlab.io/magicmirror
   artifacts:
     paths:
-      - public
+      - hugo/public
+  publish: hugo/public
   rules:
     - if: $TASK == "pages"
     - if: $CI_COMMIT_BRANCH == "master" && $TASK == "runtime"
