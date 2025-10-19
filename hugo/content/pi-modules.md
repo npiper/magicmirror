@@ -21,7 +21,7 @@ Every module needs to be configured in the `config.js` file. Here is my config f
     module: "MMM-Universal-Pir",
     position: "top_right",
     config: {
-      gpioCommand: "gpiomon -r -b gpiochip0 23",
+      gpioCommand: "gpiomon -e rising -c 0 23",
       onCommand: "wlr-randr --output HDMI-A-1 --on",
       offCommand: "wlr-randr --output HDMI-A-1 --off",
       deactivateDelay: 20 * 1000,
@@ -39,7 +39,7 @@ You can interrupt the countdown by waking the sensor up. After 20 sec. without m
 
 If something is not working you can test the above commands locally on the host.
 
-`gpiomon -r -b gpiochip0 23` should provide some output if you touch the sensor, the `wlr-randr` commands should enable/disable the screen.
+`gpiomon -e rising -c 0 23` should provide some output if you touch the sensor, the `wlr-randr` commands should enable/disable the screen.
 
 If they are working start the container and login with `docker exec -it mm bash` and try the same commands in the container. The container is running `privileged` so if the commands are not working inside could indicate a missing group.
 
@@ -53,4 +53,4 @@ With scenario **electron** ✌️ the container is started privileged. This is n
 
 ## Other hardware related modules
 
-If you are missing binaries (e.g. `python`) which are needed by a module see [this section in the FAQ](/magicmirror/docs/faq.html#how-to-install-os-dependencies-needed-by-a-module).
+If you are missing binaries (e.g. `python`) which are needed by a module see [this section in the FAQ](/faq/dependencies/).

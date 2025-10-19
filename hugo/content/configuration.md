@@ -13,7 +13,7 @@ After the first start of the container you find 3 directories
 ~/magicmirror/mounts/css
 ```
 
-`config` contains the `config.js`, you find more information [here](https://docs.magicmirror.builders/getting-started/configuration.html#general).
+`config` contains the `config.js`, you find more information [here](https://docs.magicmirror.builders/configuration/introduction.html).
 
 You can also use a `config.js.template` instead which can contain environment variables (this is not possible in `config.js`).
 This make sense for keeping secrets (e.g. passwords, api keys) out of the config file. In `config.js.template` you can use shell variable syntax e.g. `${MY_SECRET}` as placeholder for your secrets. Don't forget to pass variables in `config.js.template` as environment variables to the container:

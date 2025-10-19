@@ -6,18 +6,43 @@ breadcrumbs: false
 
 ## Installation prerequisites
 
-- [Docker](https://docs.docker.com/engine/installation/)
-- to run `docker` commands without needing `sudo` please refer to the [linux postinstall documentation](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
-- as we are using `docker compose` commands the compose plugin must be installed. If missing you find [here](https://docs.docker.com/compose/install/linux/) instructions how to install it.
+{{% steps %}}
+
+### Docker
+
+See [Installation Intructions](https://docs.docker.com/engine/installation/)
+
+### Docker postinstall
+
+To run `docker` commands without needing `sudo` please refer to the [linux postinstall documentation](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
+
+### Docker Compose
+
+As we are using `docker compose` commands the compose plugin must be installed. If missing you find [here](https://docs.docker.com/compose/install/linux/) instructions how to install it.
 
 > [!IMPORTANT]
-> This setup needs `docker compose` version `2.20.3` or above, you can check the version with `docker compose version`. If you don't want to use compose, see [this section in the FAQ](/magicmirror/docs/faq.html#how-to-start-magicmirror2-without-using-compose-yaml-files)
+> This setup needs `docker compose` version `2.20.3` or above, you can check the version with `docker compose version`. If you don't want to use compose, see [this section in the FAQ](/faq/no_compose/)
+
+{{% /steps %}}
+
 
 ## Additional prerequisites for running on a raspberry pi with Scenario **electron** ✌️ or **client** 👌
 
-- disable the screensaver (depends on the underlying os), otherwise MagicMirror² will disappear after a while.
-- enable "Wait for Network at Boot" (with `sudo raspi-config`, navigate to "3 boot options" and choose "B2 Wait for Network at Boot"). If not set, some modules will remaining in "loading..." state because MagicMirror² starts to early.
-- when using wlan you should disable "power_save" (depends on the underlying os, e.g. `sudo iw wlan0 set power_save off`), otherwise MagicMirror² can not update the displayed data without working internet connection.
+{{% steps %}}
+
+### Disable Screensaver
+
+Disable the screensaver (depends on the underlying os), otherwise MagicMirror² will disappear after a while.
+
+### Wait for Network at Boot
+
+Enable "Wait for Network at Boot" (with `sudo raspi-config`, navigate to "3 boot options" and choose "B2 Wait for Network at Boot"). If not set, some modules will remaining in "loading..." state because MagicMirror² starts to early.
+
+### Disable Wlan Power Save
+
+When using wlan you should disable "power_save" (depends on the underlying os, e.g. `sudo iw wlan0 set power_save off`), otherwise MagicMirror² can not update the displayed data without working internet connection.
+
+{{% /steps %}}
 
 ## Installation of this Repository
 
@@ -67,7 +92,7 @@ MM_INIT="no_init"
 
 ### Using own compose file
 
-If you have an own compose file where you want to add this setup you can use the install script or manual install and then run `docker compose config` in the `magicmirror/run` folder. You can copy/paste the output in your existing compose file. There are more informations in the [FAQ](/magicmirror/docs/faq.html#how-to-start-magicmirror2-without-using-compose-yaml-files).
+If you have an own compose file where you want to add this setup you can use the install script or manual install and then run `docker compose config` in the `magicmirror/run` folder. You can copy/paste the output in your existing compose file. There are more informations in the [FAQ](/faq/no_compose/).
 
 A minimal compose file for scenario **server** ☝️ is:
 
