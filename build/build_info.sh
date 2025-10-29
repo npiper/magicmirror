@@ -12,3 +12,11 @@ if [ "$(sed -rn 's|^ID=||p' /etc/os-release)" = "alpine" ] && [ "$(uname -m)" = 
 else
   echo "npm $(npm -v)" >> build.info || true
 fi
+if [ "${1}" = "Runtime" ]; then
+  git config --system --add safe.directory $MM_DIR
+  git config core.fileMode false
+  git config --global user.email "container@container.com"
+  git config --global user.name "container"
+  git add .
+  git commit -m "changes for container setup"
+fi

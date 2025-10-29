@@ -13,7 +13,8 @@ ENV MM_DIR=/opt/magic_mirror
 WORKDIR $MM_DIR
 
 # copy startscripts into container:
-COPY --chmod=0777 --chown=node:node *.sh $MM_DIR/
+COPY --chmod=0777 --chown=node:node create_restore_script.sh entrypoint.sh health.sh $MM_DIR/
+COPY --chmod=0777 --chown=node:node build_info.sh /tmp/
 COPY --from=builder --chmod=0777 --chown=node:node $MM_DIR $MM_DIR
 
 SHELL ["/bin/bash", "-c"]
@@ -23,7 +24,6 @@ SHELL ["/bin/bash", "-c"]
 ARG GIT_INFO NODE_ENV DEBIAN_VERSION SLIM FAT CI_PROJECT_ID TARGETARCH
 RUN <<EOF
 set -e
-chown node:node $MM_DIR
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get -qy --no-install-recommends install git nano openssl ca-certificates wget tini gnupg
 if [[ "${TARGETARCH}" == "amd64" && "${FAT}" == "_default" ]]; then
@@ -70,16 +70,15 @@ fi
 echo "#!/bin/bash" > /usr/local/bin/sudo
 echo 'exec "$@"' >> /usr/local/bin/sudo
 chmod +x *.sh /usr/local/bin/sudo
-git config --system --add safe.directory $MM_DIR
-git config core.fileMode false
 # different group bookworm vs trixie
 groupadd -g 105 renderb
 groupadd -g 992 rendert
 groupadd -g 993 gpiob
 groupadd -g 986 gpiot
 usermod -a -G gpiob,gpiot,video,renderb,rendert node
-./build_info.sh "Runtime" "$GIT_INFO"
-rm -f build_info.sh
+/tmp/build_info.sh "Runtime" "$GIT_INFO"
+rm -f /tmp/build_info.sh
+chown -R node:node $MM_DIR
 EOF
 
 USER node

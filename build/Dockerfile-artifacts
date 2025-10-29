@@ -1,7 +1,7 @@
 # check=skip=InvalidDefaultArgInFrom
 ARG NODE_VERSION BUILDKIT_IMG DEBIAN_VERSION
 FROM ${BUILDKIT_IMG}/node-prune:latest AS prune
-FROM node:${NODE_VERSION} AS builder
+FROM node:${NODE_VERSION}-${DEBIAN_VERSION} AS builder
 
 SHELL ["/bin/bash", "-c"]
 
@@ -47,7 +47,7 @@ mv modules __modules
 mv config __config
 # using cp here so in case whole css-dir is mounted we can copy back,
 # in case only custom.css is mounted the other css files are in place:
-mkdir __css
+mkdir __css modules
 cp -r css/* __css/
 # remove not needed node_modules stuff
 [[ "${IMGKEY}" != "amd64_debug" ]] && node-prune || echo "no node-prune"
@@ -55,10 +55,6 @@ chmod +x /tmp/build_info.sh
 cp /tmp/build_info.sh .
 ./build_info.sh "Artifacts" "$GIT_INFO"
 rm -f build_info.sh
-git config --global user.email "build@artifacts.com"
-git config --global user.name "build"
-git add .
-git commit -m "changes for container setup"
 EOF
 
 FROM scratch

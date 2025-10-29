@@ -54,8 +54,8 @@ bld_art:
         export BuildRef="develop"
       fi
       export PUSH_IMAGES="${CI_REGISTRY_IMAGE}:${BUILDER_TAG}_${IMGKEY}_artifacts"
-      set | grep -E "NODE_VERSION=|BuildRef=|GITREPO_URL="
-      export BUILDKIT_VARS="NODE_VERSION GIT_INFO IMGKEY BuildRef GITREPO_URL BUILDKIT_IMG"
+      set | grep -E "NODE_VERSION=|DEBIAN_VERSION=|BuildRef=|GITREPO_URL="
+      export BUILDKIT_VARS="NODE_VERSION DEBIAN_VERSION GIT_INFO IMGKEY BuildRef GITREPO_URL BUILDKIT_IMG"
       build
   rules:
     - if: $TASK == "runtime" && $CI_COMMIT_BRANCH == "master"
