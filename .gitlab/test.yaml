@@ -30,16 +30,17 @@ test_electron_rebuild:
   stage: test
   variables:
     GIT_STRATEGY: none
-  image: nikolaik/python-nodejs:python3.14-nodejs${NODE_VERSION_DEVELOP}-bookworm
+  image: nikolaik/python-nodejs:latest
   script:
     - |
       apt-get update
-      apt-get install -y gpiod libgpiod2 libgpiod-dev build-essential libgtk-3-0 libx11-xcb-dev libnss3-dev libxss1 libxtst6 libasound2 libdrm2 libgbm1 libxshmfence1
+      apt-get install -y build-essential libgtk-3-0 libx11-xcb-dev libnss3-dev libxss1 libxtst6 libasound2 libdrm2 libgbm1 libxshmfence1
       node -v
       python --version
+      cat /etc/os-release
       cd
       npm init -y
-      npm install electron @electron/rebuild node-libgpiod onoff node-pty drivelist
+      npm install electron @electron/rebuild serialport
       npx electron -v --no-sandbox
       echo "electron-rebuild version:"
       npx electron-rebuild --version
