@@ -94,3 +94,75 @@ triage:
     - if: $TASK == "triage"
   environment:
     name: "$CI_COMMIT_BRANCH/Triage"
+
+test_install:
+  stage: build
+  image: docker:cli
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - |
+      apk add --no-cache bash jq
+      git status
+      install/install.sh server
+      sleep 5s
+      echo "###################################################################"
+      ext=0
+      state="$(docker ps --filter name=mm --format json | jq -r '.State')"
+      if [[ "$state" == "running" ]]; then
+        echo "mm container is running"
+      else
+        echo "mm container not running, state is $state"
+        ext=1
+      fi
+      if docker logs mm | grep ">>>   Ready to go! Please point your browser to: http://0.0.0.0:8080   <<<" > /dev/null; then
+        echo "application started"
+      else
+        echo "application not started"
+        ext=1
+      fi
+      if [[ -f mounts/css/custom.css ]]; then
+        echo "custom.css exists and is a file"
+      else
+        echo "custom.css does not exist or is not a file"
+        ext=1
+      fi
+      if [[ -f mounts/config/config.js ]]; then
+        echo "config.js exists and is a file"
+      else
+        echo "config.js does not exist or is not a file"
+        ext=1
+      fi
+      if [[ -L mounts/modules/default ]]; then
+        echo "modules/default exists and is a symlink"
+      else
+        echo "modules/default does not exist or is not a symlink"
+        ext=1
+      fi
+      owned="$(stat -c '%u:%g' mounts/css/custom.css)"
+      if [[ "$owned" == "1000:1000" ]]; then
+        echo "custom.css has correct ownership $owned"
+      else
+        echo "custom.css has wrong ownership $owned"
+        ext=1
+      fi
+      owned="$(stat -c '%u:%g' mounts/config/config.js)"
+      if [[ "$owned" == "1000:1000" ]]; then
+        echo "config.js has correct ownership $owned"
+      else
+        echo "config.js has wrong ownership $owned"
+        ext=1
+      fi
+      echo "###################################################################"
+      exit $ext
+  after_script:
+    - |
+      cd run
+      docker compose down
+  rules:
+    - if: $TASK == "test_install"
+    - if: $TASK == "runtime" && $CI_COMMIT_BRANCH != "master"
+      needs: ["build_debian_slim"]
+
