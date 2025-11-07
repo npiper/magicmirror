@@ -1,28 +1,48 @@
 # start with: dc run --rm --name mm --service-ports magicmirror
+
+# if you need another (forked) mm repo add it as new remote to your git repo in windows and checkout the branch needed
+# if you need to run "npm i" use "npm -g i" instead (the last one installs in /opt/magic_mirror/node_modules/ whereas "npm i" would install into "/mnt/c/data/repo/foreign/MagicMirror" which is very slow)
+
 services:
   magicmirror:
     image: registry.gitlab.com/khassel/magicmirror:develop_debug24
     environment:
-      - XDG_RUNTIME_DIR=/tmp
-#      LD_PRELOAD: /usr/local/lib/libfaketime.so.1
-#      FAKETIME: -1d
-#      DISPLAY: unix:0.0
+      - XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir
+      - DISPLAY=unix:0.0
+      # - XDG_RUNTIME_DIR=/tmp # use for running electron tests
+      - NPM_CONFIG_PREFIX=/opt/magic_mirror/node_modules/
+      - WAYLAND_DISPLAY=wayland-0
+      - WLR_BACKENDS=headless
+      - WLR_LIBINPUT_NO_DEVICES=1
+      - WLR_RENDERER=pixman
+      # - LD_PRELOAD=/usr/local/lib/libfaketime.so.1
+      # - FAKETIME=-1d
     ports:
       - "8080:8080"
     stdin_open: true
+    shm_size: "268435456"
     tty: true
-    command:
+    entrypoint:
       - /bin/bash
       - -c
       - |
-        # comment out if needed:
-        #rm -rf ./*
-        #rm -rf ./.*
-        #git clone -b cloneobject https://github.com/khassel/MagicMirror.git .
-        #npm install
-        #mv config/config.js.sample config/config.js
-        #sed -i 's|address:.*|address: "0.0.0.0",|g;s|ipWhitelist:.*|ipWhitelist: [],|g' config/config.js
-        #touch ${MM_CUSTOMCSS_FILE:-"css/custom.css"}
-        WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER=pixman labwc &
-        export WAYLAND_DISPLAY=wayland-0
+        ln -sf /opt/magic_mirror/node_modules /home/node/magicmirror/
+        cd /home/node/magicmirror
+        if [[ ! -f config/config.js ]]; then
+          cp config/config.js.sample config/config.js
+          sed -i 's|address:.*|address: "0.0.0.0",|g;s|ipWhitelist:.*|ipWhitelist: [],|g' config/config.js
+        fi
+        if [[ ! -f css/custom.css ]]; then
+          touch css/custom.css
+        fi
+        # labwc &  # use for running electron tests
         /bin/bash
+    volumes:
+      # mount local project dir
+      - /mnt/c/data/repo/foreign/MagicMirror:/home/node/magicmirror
+      # mount XDG_RUNTIME_DIR, needed for electron
+      - /mnt/wslg/runtime-dir:/mnt/wslg/runtime-dir
+      # mount module to test with config
+      # - /mnt/c/data/repo/k13/MMM-Flights:/home/node/magicmirror/modules/MMM-Flights
+      # - /mnt/c/data/repo/k13/MMM-Flights/debug/config.js:/home/node/magicmirror/config/config.js
+    working_dir: /home/node/magicmirror
