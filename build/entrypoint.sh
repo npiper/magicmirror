@@ -17,7 +17,7 @@ _start_mm() {
   if [ "$(id -u)" = "0" ]; then
     _info "running as root but starting the magicmirror process with uid=1000"
     # directories must be writable by user node:
-    chown -R node:node $modules_dir $config_dir $css_dir
+    chown -R node:node "$modules_dir" "$config_dir" "$css_dir"
     _file="mm.env"
     rm -f $_file
     echo "export START_CMD=\"$@\"" > $_file
@@ -33,10 +33,11 @@ _start_mm() {
 }
 
 if [ -z "$TZ" ]; then
-  export TZ="$(wget -qO - http://geoip.ubuntu.com/lookup | sed -n -e 's/.*<TimeZone>\(.*\)<\/TimeZone>.*/\1/p')"
-  if cat /etc/os-release | grep bookworm; then
+  export TZ
+  TZ="$(wget -qO - http://geoip.ubuntu.com/lookup | sed -n -e 's/.*<TimeZone>\(.*\)<\/TimeZone>.*/\1/p')"
+  if cat /etc/os-release | grep bookworm > /dev/null; then
     if [ -w /etc/localtime ]; then
-      ln -fs /usr/share/zoneinfo/$TZ /etc/localtime
+      ln -fs "/usr/share/zoneinfo/$TZ" /etc/localtime
     else
       _info "***WARNING*** could not write to /etc/localtime"
     fi
@@ -53,7 +54,7 @@ if [ -z "$TZ" ]; then
 fi
 
 if [ "${MM_OVERRIDE_DEFAULT_MODULES}" = "true" ]; then
-  mkdir -p ${modules_dir}
+  mkdir -p "${modules_dir}"
   if [ -w "${modules_dir}" ]; then
     if test -d "${default_dir}" && ! test -L "${default_dir}"; then
       # if it's a real directory (not a symlink) then move it away
@@ -62,7 +63,7 @@ if [ "${MM_OVERRIDE_DEFAULT_MODULES}" = "true" ]; then
       mv "${default_dir}" "${modules_dir}/default-save"
     fi
     _info "symlink default modules"
-    ln -sf ${MM_DIR}/__modules/default ${MM_DIR}/modules
+    ln -sf "${MM_DIR}/__modules/default" "${MM_DIR}/modules"
   else
     _error "No write permission for ${modules_dir}, skipping symlinking default modules"
   fi
@@ -73,20 +74,20 @@ fi
 if [ "${MM_OVERRIDE_CSS}" = "true" ]; then
   if [ -w "${css_dir}" ]; then
     _info "copy css files"
-    cp ${MM_DIR}/__css/* ${css_dir}/
+    cp "${MM_DIR}/__css/*" "${css_dir}/"
   else
     _error "No write permission for ${css_dir}, skipping copying css files"
   fi
 fi
 
 # create css/custom.css file https://github.com/MagicMirrorOrg/MagicMirror/issues/1977
-[ ! -f "${css_dir}/custom.css" ] && touch ${css_dir}/custom.css
+[ ! -f "${css_dir}/custom.css" ] && touch "${css_dir}/custom.css"
 
 if [ ! -f "${config_dir}/config.js" ]; then
-  mkdir -p ${config_dir}
+  mkdir -p "${config_dir}"
   if [ -w "${config_dir}" ]; then
     _info "copy default config.js"
-    cp ${MM_DIR}/__config/config.js.sample ${config_dir}/config.js
+    cp "${MM_DIR}/__config/config.js.sample" "${config_dir}/config.js"
   else
     _error "No write permission for ${config_dir}, skipping copying config.js"
   fi
@@ -94,10 +95,10 @@ fi
 
 if [ "$MM_SHOW_CURSOR" = "true" ]; then
   _info "enable mouse cursor"
-  sed -i "s|  cursor: .*;|  cursor: auto;|" ${MM_DIR}/css/main.css
+  sed -i "s|  cursor: .*;|  cursor: auto;|" "${MM_DIR}/css/main.css"
 fi
 
-[ -z "$MM_RESTORE_SCRIPT_CONFIG" ] || (${MM_DIR}/create_restore_script.sh "$MM_RESTORE_SCRIPT_CONFIG" || true)
+[ -z "$MM_RESTORE_SCRIPT_CONFIG" ] || ("${MM_DIR}/create_restore_script.sh" "$MM_RESTORE_SCRIPT_CONFIG" || true)
 
 if [ "$STARTENV" = "test" ]; then
   set -e
@@ -111,7 +112,7 @@ if [ "$STARTENV" = "test" ]; then
   WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER=pixman labwc &
   export WAYLAND_DISPLAY=wayland-0
 
-  cd ${MM_DIR}
+  cd "${MM_DIR}"
   
   node --run test:prettier
   node --run test:js
@@ -147,7 +148,7 @@ else
     if [ -z "$MM_SCENARIO" ]; then
       # ... and no scenario set, then add defaults depending if electron is installed:
       if command -v node_modules/.bin/electron > /dev/null; then
-        if [ -S $XDG_RUNTIME_DIR/wayland-0 ]; then
+        if [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
           _start_mm node --run start:wayland
         else
           _start_mm node --run start
@@ -158,7 +159,7 @@ else
     else
       # ... add defaults depending of the scenario:
       if [ "$MM_SCENARIO" = "electron" ]; then
-        if [ -S $XDG_RUNTIME_DIR/wayland-0 ]; then
+        if [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
           _start_mm node --run start:wayland
         else
           _start_mm node --run start

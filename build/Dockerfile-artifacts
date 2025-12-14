@@ -1,4 +1,5 @@
-ARG NODE_VERSION BUILDKIT_IMG
+# check=skip=InvalidDefaultArgInFrom
+ARG NODE_VERSION BUILDKIT_IMG DEBIAN_VERSION
 FROM ${BUILDKIT_IMG}/node-prune:latest AS prune
 FROM node:${NODE_VERSION} AS builder
 

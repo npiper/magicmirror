@@ -29,10 +29,14 @@ _checkparams(){
 _checkparams "$1"
 
 # get magicmirror directory as base
-base="$(dirname $(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd))"
+base="$(dirname "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)")"
 branch=$(git rev-parse --abbrev-ref HEAD)
-_sudo=""
 _uid="$(id -u)"
+
+_sudo=""
+if command -v sudo > /dev/null; then
+  _sudo="sudo"
+fi
 
 _info "--> Installing docker"
 
@@ -43,12 +47,8 @@ if command -v docker > /dev/null; then
 else
   # install docker using official convenience script
   curl -fsSL https://get.docker.com -o get-docker.sh
-  sudo sh get-docker.sh
+  $_sudo sh get-docker.sh
   rm -f get-docker.sh
-
-  # postinstall docker, add current user to group "docker"
-  sudo usermod -aG docker $USER
-  _sudo="sudo"
 fi
 
 if [[ -d "/run/systemd" && "$_uid" == "0" ]]; then
@@ -79,7 +79,7 @@ if [[ ! -f ".env" ]]; then
   fi
 
   # set scenario:
-  sed -i 's|MM_SCENARIO=.*|MM_SCENARIO="'$scenario'"|g' .env
+  sed -i 's|MM_SCENARIO=.*|MM_SCENARIO="'"$scenario"'"|g' .env
   if [[ "$scenario" == "client" ]]; then
     sed -i 's|MM_INIT=.*|MM_INIT="no"|g' .env
   else
@@ -97,22 +97,21 @@ if [[ ! -f ".env" ]]; then
 fi
 
 _info "--> Pulling container images and starting magicmirror"
-# need sudo for docker here if docker was installed with this script
 
-# use up so mm can start if there are already local images
-$_sudo docker compose up -d
-
-if [[ "$_uid" == "0" ]]; then
-  # pull new images
-  $_sudo docker compose pull
-  # restart (only if new images pulled)
+# check if current user has group "docker"
+if ! id | grep "(docker)" > /dev/null; then
+  [[ "$_uid" == "0" ]] || $_sudo usermod -aG docker "$USER"
   $_sudo docker compose up -d
-  # cleanup when running as root
-  $_sudo docker image prune -f
-fi
+else
+  # use up so mm can start if there are already local images
+  docker compose up -d
 
-if [[ "$_sudo" == "sudo" ]]; then
-  _info "--> Reboot needed, starting in 20 sec. (use ctrl-c to skip)"
-  sleep 20
-  sudo reboot now
+  if [[ "$_uid" == "0" ]]; then
+    # pull new images
+    docker compose pull
+    # restart (only if new images pulled)
+    docker compose up -d
+    # cleanup when running as root
+    docker image prune -f
+  fi
 fi

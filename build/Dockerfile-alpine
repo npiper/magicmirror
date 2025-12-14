@@ -1,3 +1,4 @@
+# check=skip=InvalidDefaultArgInFrom
 ARG CI_REGISTRY_IMAGE BUILDER_TAG NODE_VERSION
 FROM ${CI_REGISTRY_IMAGE}:${BUILDER_TAG}_${TARGETARCH}_min_artifacts AS builder
 FROM node:${NODE_VERSION}-alpine AS build-amd64

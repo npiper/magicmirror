@@ -1,3 +1,4 @@
+# check=skip=InvalidDefaultArgInFrom
 ARG DEBIAN_VERSION
 FROM debian:${DEBIAN_VERSION}-slim
 
