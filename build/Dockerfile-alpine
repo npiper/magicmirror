@@ -36,5 +36,6 @@ ENV NODE_ENV=production \
     MM_OVERRIDE_DEFAULT_MODULES=true
 
 EXPOSE 8080
+HEALTHCHECK --timeout=10s --start-period=60s CMD ./health.sh
 
 ENTRYPOINT ["/sbin/tini", "--", "./entrypoint.sh"]
