@@ -90,6 +90,13 @@ ENV ELECTRON_DISABLE_SANDBOX=1 \
     NODE_ENV=${NODE_ENV} \
     MM_OVERRIDE_DEFAULT_MODULES=true
 
+RUN <<EOF
+if [[ "${NODE_ENV}" == "test" ]]; then
+  echo "installing chromium stuff needed by playwright"
+  npx playwright install chromium
+fi
+EOF
+
 EXPOSE 8080
 HEALTHCHECK --timeout=10s --start-period=60s CMD ./health.sh
 
