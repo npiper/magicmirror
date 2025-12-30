@@ -1,8 +1,8 @@
 # check=skip=InvalidDefaultArgInFrom
 ARG CI_REGISTRY_IMAGE BUILDER_TAG FAT NODE_VERSION DEBIAN_VERSION SLIM
 FROM ${CI_REGISTRY_IMAGE}:${BUILDER_TAG}_${TARGETARCH}${FAT}_artifacts AS builder
-FROM node:${NODE_VERSION}-${DEBIAN_VERSION}${SLIM} AS build-amd64
-FROM node:${NODE_VERSION}-${DEBIAN_VERSION}${SLIM} AS build-arm64
+FROM dhi.io/node:${NODE_VERSION}-debian${DEBIAN_VERSION}-dev AS build-amd64
+FROM dhi.io/node:${NODE_VERSION}-debian${DEBIAN_VERSION}-dev AS build-arm64
 FROM node:22-bookworm${SLIM} AS build-arm
 FROM build-${TARGETARCH}
 LABEL maintainer="Karsten Hassel"
@@ -26,12 +26,16 @@ RUN <<EOF
 set -e
 source /etc/os-release
 apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get -qy --no-install-recommends install git nano openssl ca-certificates wget tini gnupg
+_pck="git ncurses-term nano openssl ca-certificates wget tini gnupg"
+DEBIAN_FRONTEND=noninteractive apt-get -qy --no-install-recommends install ${_pck}
 if [[ "${TARGETARCH}" == "amd64" && "${FAT}" == "_default" ]]; then
   echo "no installation of additional packages"
 else
   _pck="${_pck} libgtk-3-0 libx11-xcb-dev libnss3-dev libxss1 libxtst6 libasound2 libdrm2 libgbm1 libxshmfence1 fonts-arphic-uming \
      procps arp-scan"
+  if [[ -z "${SLIM}" ]]; then
+    _pck="${_pck} python3"
+  fi
   if [[ "${TARGETARCH}" != "amd64" ]]; then
     # install pi stuff
     _pck="${_pck} libgl1-mesa-dri libglapi-mesa libsensors5 libdrm-radeon1 libelf1 libdrm-amdgpu1 \
@@ -48,6 +52,10 @@ else
       # trixie
       _pck="${_pck} libllvm19 libegl1-mesa-dev libgles2-mesa-dev libwayland-egl1"
     fi
+    if [[ -z "${SLIM}" ]]; then
+      DEBIAN_FRONTEND=noninteractive apt-get -qy remove libexpat1
+      _pck="${_pck} python3-dev python3-pip build-essential"
+    fi
   fi
 fi
 if [[ "${NODE_ENV}" == "test" ]]; then
@@ -55,13 +63,12 @@ if [[ "${NODE_ENV}" == "test" ]]; then
 fi
 DEBIAN_FRONTEND=noninteractive apt-get -qy --no-install-recommends install ${_pck}
 DEBIAN_FRONTEND=noninteractive apt-get -qy remove gnupg
-if [[ -z "${SLIM}" ]]; then
+if [[ -z "${SLIM}" && "${TARGETARCH}" != "amd64" ]]; then
   # need newest version for arm32 so using pip
-  DEBIAN_FRONTEND=noninteractive apt-get -qy install python3-dev python3-pip
   python3 -m pip install RPi.GPIO --no-cache-dir --break-system-packages
   DEBIAN_FRONTEND=noninteractive apt-get -qy remove python3-dev python3-pip
-  DEBIAN_FRONTEND=noninteractive apt-get -qy autoremove
 fi
+DEBIAN_FRONTEND=noninteractive apt-get -qy autoremove
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 if [[ "${VERSION_CODENAME}" == "bookworm" ]]; then
@@ -76,6 +83,9 @@ groupadd -g 105 renderb
 groupadd -g 992 rendert
 groupadd -g 993 gpiob
 groupadd -g 986 gpiot
+if ! cat /etc/group | grep -q video:; then
+  groupadd -g 44 video
+fi
 usermod -a -G gpiob,gpiot,video,renderb,rendert node
 /tmp/build_info.sh "Runtime" "$GIT_INFO"
 rm -f /tmp/build_info.sh

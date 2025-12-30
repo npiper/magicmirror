@@ -1,7 +1,7 @@
 # check=skip=InvalidDefaultArgInFrom
 ARG NODE_VERSION BUILDKIT_IMG DEBIAN_VERSION
 FROM ${BUILDKIT_IMG}/node-prune:latest AS prune
-FROM node:${NODE_VERSION}-${DEBIAN_VERSION} AS builder
+FROM dhi.io/node:${NODE_VERSION}-debian${DEBIAN_VERSION}-dev AS builder
 
 SHELL ["/bin/bash", "-c"]
 

@@ -17,8 +17,9 @@ variables:
   MAGICMIRROR_VERSION: "v2.33.0"
   NODE_VERSION_MASTER: "24"
   NODE_VERSION_DEVELOP: "25"
-  DEBIAN_VERSION_MASTER: "trixie"
-  DEBIAN_VERSION_DEVELOP: "trixie"
+  DEBIAN_VERSION_MASTER: "13"
+  DEBIAN_VERSION_DEVELOP: "13"
+  ALPINE_VERSION: "3.22"
   GITREPO_NAME: "MagicMirrorOrg/MagicMirror"
   GITREPO_URL: "https://github.com/${GITREPO_NAME}.git"
 
@@ -88,19 +89,22 @@ start_dev_build:
   variables:
     DEV_BRANCH: "develop"
   image:
-    name: ${DOCKER_USER}/magicmirror:${DEV_BRANCH}_fat
+    name: ${DOCKER_USER}/magicmirror:${DEV_BRANCH}_alpine
     entrypoint: [""]
+    docker:
+      user: root
   script:
     - |
       cd $MM_DIR
       current_sha="$(git log -1 --pretty=format:"%H")"
-      curl -s --output repo.json https://api.github.com/repos/${GITREPO_NAME}/git/ref/heads/${DEV_BRANCH}
+      wget -q --output-document=repo.json https://api.github.com/repos/${GITREPO_NAME}/git/ref/heads/${DEV_BRANCH}
       remote_sha="$(cat repo.json | sed -rn 's|.*"sha": "([a-z,0-9]*).*|\1|p')"
       echo "current_sha: $current_sha"
       echo "remote_sha:  $remote_sha"
       if [[ "$current_sha" == "$remote_sha" ]]; then
         echo "up to date, nothing to do."
       else
+        apk add curl
         echo "remote has new commits, starting ${DEV_BRANCH} pipeline."
         curl --request POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/trigger/pipeline?token=${CI_JOB_TOKEN}&ref=${DEV_BRANCH}&variables\[TASK\]=runtime"
       fi

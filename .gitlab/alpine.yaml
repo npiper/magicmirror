@@ -12,7 +12,7 @@ build_alpine:
     - |
       set -e
       echo "Building alpine image ..."
-      export BUILDKIT_VARS="NODE_VERSION GIT_INFO CI_REGISTRY_IMAGE BUILDER_TAG"
+      export BUILDKIT_VARS="NODE_VERSION GIT_INFO CI_REGISTRY_IMAGE BUILDER_TAG ALPINE_VERSION"
       if [[ "$NODE_VERSION" != "22" ]]; then
         echo "using node version 22 for arm build because no node version $NODE_VERSION available for this architecture."
       fi

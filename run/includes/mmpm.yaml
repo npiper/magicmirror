@@ -16,3 +16,10 @@ services:
       - ../../mounts/${MM_CUSTOMCSS_FILE}:/home/node/MagicMirror/css/custom.css
       - ../../mounts/mmpm-config:/home/node/.config/mmpm
     restart: always
+    post_start:
+      - command:
+          - /bin/bash
+          - -c
+          - |
+            chown -R node:node /home/node/.config/
+        user: root

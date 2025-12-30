@@ -14,22 +14,7 @@ _error() {
 }
 
 _start_mm() {
-  if [ "$(id -u)" = "0" ]; then
-    _info "running as root but starting the magicmirror process with uid=1000"
-    # directories must be writable by user node:
-    chown -R node:node "$modules_dir" "$config_dir" "$css_dir"
-    _file="mm.env"
-    rm -f $_file
-    echo "export START_CMD=\"$@\"" > $_file
-    for _line in $(env); do
-      if echo "$_line" | grep -Eq '^(XDG.*|.*DISPLAY.*|MM_.*|NODE.*|DBUS.*|ELECTRON.*|TZ.*)$'; then
-        echo "export $_line" >> $_file
-      fi
-    done
-    exec su - node -c 'cd /opt/magic_mirror; . '$_file'; $START_CMD'
-  else
-    exec "$@"
-  fi
+  exec "$@"
 }
 
 if [ -z "$TZ" ]; then

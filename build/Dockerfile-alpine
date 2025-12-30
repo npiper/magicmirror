@@ -1,8 +1,8 @@
 # check=skip=InvalidDefaultArgInFrom
-ARG CI_REGISTRY_IMAGE BUILDER_TAG NODE_VERSION
+ARG CI_REGISTRY_IMAGE BUILDER_TAG NODE_VERSION ALPINE_VERSION
 FROM ${CI_REGISTRY_IMAGE}:${BUILDER_TAG}_${TARGETARCH}_min_artifacts AS builder
-FROM node:${NODE_VERSION}-alpine AS build-amd64
-FROM node:${NODE_VERSION}-alpine AS build-arm64
+FROM dhi.io/node:${NODE_VERSION}-alpine${ALPINE_VERSION}-dev AS build-amd64
+FROM dhi.io/node:${NODE_VERSION}-alpine${ALPINE_VERSION}-dev AS build-arm64
 FROM node:22-alpine AS build-arm
 FROM build-${TARGETARCH}
 LABEL maintainer="Karsten Hassel"
