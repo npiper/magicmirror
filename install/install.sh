@@ -63,7 +63,17 @@ fi
 
 cd "$base/run"
 
-[[ -f "compose.yaml" ]] || cp original.compose.yaml compose.yaml
+git update-index --assume-unchanged ../mounts/css/custom.css || true
+
+if [[ -f "compose.yaml" ]]; then
+  if [[ ! -f "includes/init.yaml" ]]; then
+    # cleanup old setup, remove later ...
+    sed -i -r 's|.*- includes/\$\{MM_INIT\}.yaml||g' compose.yaml
+  fi
+else
+  cp original.compose.yaml compose.yaml
+fi
+
 if [[ ! -f ".env" ]]; then
   _info "--> Magicmirror container setup for scenario $scenario"
 

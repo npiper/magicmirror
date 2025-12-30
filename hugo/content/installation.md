@@ -163,13 +163,15 @@ docker compose up -d
 
 > With every new image the old image remains on your hard disc and occupies disk space. To get rid of all old images you can execute `docker image prune -f`.
 
-## Init container and running as root
+## Volume permissions
 
 The container runs with userid=1000, this is normally the userid of the pi user.
 
-The volumes on the host (~/magicmirror/mounts/*) are created at first start from the docker daemon with userid=0 (root), so we have to correct the permissions, otherwise the container cannot access the volumes. This is done by a init container which is started before the mm container.
+The volumes on the host (~/magicmirror/mounts/*) are created at first start from the docker daemon with userid=0 (root), so we have to correct the permissions, otherwise the container cannot access the volumes. This is done by a `post_start` command which is started with the mm container.
 
-If you don't want or need this behavior you can remove the init container by setting `MM_INIT="no_init"` in the `.env` file.
+If you don't want or need this behavior you can remove it by setting `MM_INIT="no_init"` in the `.env` file.
+
+## Running as root
 
 The container has no root permissions and no `sudo` installed, so if you need such permissions you have to add `user: root` to the `compose.yaml` file.
 

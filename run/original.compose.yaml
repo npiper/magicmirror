@@ -1,5 +1,4 @@
 include:
-  - includes/${MM_INIT}.yaml
   - includes/${MM_MMPM}.yaml
   - includes/${MM_LABWC}.yaml
   - includes/${MM_WATCHTOWER}.yaml

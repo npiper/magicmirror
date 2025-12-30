@@ -9,7 +9,6 @@ Here an example, `compose.yaml`:
 
 ```yaml
 include:
-  - includes/${MM_INIT}.yaml
   - includes/${MM_MMPM}.yaml
   - includes/${MM_LABWC}.yaml
   - includes/${MM_WATCHTOWER}.yaml
@@ -20,7 +19,7 @@ services:
     restart: always
     extends:
       file: includes/base.yaml
-      service: ${MM_SCENARIO}_${MM_INIT}
+      service: ${MM_SCENARIO}
 ```
 
 Expanded `compose.yaml`, output of `docker compose config`:

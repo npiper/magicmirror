@@ -1,6 +1,32 @@
+x-master: &master
+  image: ${MM_IMAGE}
+  volumes:
+    - ${VOLUME_CONFIG}
+    - ${VOLUME_MODULES}
+    - ${VOLUME_CSS}
+  environment:
+    - MM_OVERRIDE_DEFAULT_MODULES
+    - MM_SHOW_CURSOR
+    - MM_SCENARIO
+    - MM_MODULES_DIR
+    - MM_CUSTOMCSS_FILE
+  post_start:
+    - command:
+        - /bin/sh
+        - -c
+        - |
+          [ "$MM_INIT" = "init" ] || exit 0
+          chown -R ${MM_UID}:${MM_GID} config ${MM_MODULES_DIR} ${MM_CUSTOMCSS_FILE}
+          chmod -R ${MM_CHMOD} config ${MM_MODULES_DIR} ${MM_CUSTOMCSS_FILE}
+      user: root
+      environment:
+        - MM_UID
+        - MM_GID
+        - MM_CHMOD
+        - MM_INIT
+
 services:
   gui:
-    image: ${MM_IMAGE}
     volumes:
       # removes error messages, not needed for running:
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
@@ -21,36 +47,18 @@ services:
     shm_size: "256mb"
   # server
   server:
-    image: ${MM_IMAGE}
-    volumes:
-      - ${VOLUME_CONFIG}
-      - ${VOLUME_MODULES}
-      - ${VOLUME_CSS}
-    environment:
-      - MM_OVERRIDE_DEFAULT_MODULES
-      - MM_SHOW_CURSOR
-      - MM_SCENARIO
-      - MM_MODULES_DIR
-      - MM_CUSTOMCSS_FILE
+    <<: *master
     ports:
       - ${MM_SERVER_PORTS}
   # electron
   electron:
-    volumes:
-      - ${VOLUME_CONFIG}
-      - ${VOLUME_MODULES}
-      - ${VOLUME_CSS}
-    environment:
-      - MM_OVERRIDE_DEFAULT_MODULES
-      - MM_SHOW_CURSOR
-      - MM_SCENARIO
-      - MM_MODULES_DIR
-      - MM_CUSTOMCSS_FILE
+    <<: *master
+    network_mode: host
     extends:
       service: gui
-    network_mode: host
   # client
   client:
+    image: ${MM_IMAGE}
     extends:
       service: gui
     command: "node clientonly --address ${MM_CLIENT_ADDRESS} --port ${MM_CLIENT_PORT}"
