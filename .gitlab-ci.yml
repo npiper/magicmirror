@@ -15,9 +15,9 @@ variables:
   GIT_DEPTH: 1
   TZ: "Europe/Berlin"
   MAGICMIRROR_VERSION: "v2.33.0"
-  NODE_VERSION_MASTER: "22"
-  NODE_VERSION_DEVELOP: "24"
-  DEBIAN_VERSION_MASTER: "bookworm"
+  NODE_VERSION_MASTER: "24"
+  NODE_VERSION_DEVELOP: "25"
+  DEBIAN_VERSION_MASTER: "trixie"
   DEBIAN_VERSION_DEVELOP: "trixie"
   GITREPO_NAME: "MagicMirrorOrg/MagicMirror"
   GITREPO_URL: "https://github.com/${GITREPO_NAME}.git"

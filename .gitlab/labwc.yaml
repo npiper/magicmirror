@@ -8,8 +8,6 @@ build_labwc:
   script:
     - !reference [.init, script]
     - |
-      # todo: remove following line after DEBIAN_VERSION_MASTER is switched to trixie:
-      [[ "$DEBIAN_VERSION" == "bookworm" ]] && DEBIAN_VERSION="trixie"
       export BUILDKIT_VARS="DEBIAN_VERSION"
       if [[ "${CI_COMMIT_BRANCH}" == "master" ]]; then
         export PUSH_IMAGES="karsten13/labwc:latest,karsten13/labwc:$(date '+%F')"

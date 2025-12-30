@@ -21,9 +21,10 @@ SHELL ["/bin/bash", "-c"]
 
 # procps, arp-scan needed for the module MMM-NetworkScanner
 # modules which needs sudo must be run as root, use `user: root` in docker-compose.yaml
-ARG GIT_INFO NODE_ENV DEBIAN_VERSION SLIM FAT CI_PROJECT_ID TARGETARCH
+ARG GIT_INFO NODE_ENV SLIM FAT CI_PROJECT_ID TARGETARCH
 RUN <<EOF
 set -e
+source /etc/os-release
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get -qy --no-install-recommends install git nano openssl ca-certificates wget tini gnupg
 if [[ "${TARGETARCH}" == "amd64" && "${FAT}" == "_default" ]]; then
@@ -36,7 +37,7 @@ else
     _pck="${_pck} libgl1-mesa-dri libglapi-mesa libsensors5 libdrm-radeon1 libelf1 libdrm-amdgpu1 \
       libdrm-nouveau2 x11-xserver-utils libgpiod-dev gpiod wlr-randr cec-utils libegl-mesa0 libegl1 libgl1 libgles2 \
       libglvnd0 libglx-mesa0 libglx0 libxcb-glx0 mesa-utils mesa-utils-bin"
-    if [[ "${DEBIAN_VERSION}" == "bookworm" ]]; then
+    if [[ "${VERSION_CODENAME}" == "bookworm" ]]; then
       _pck="${_pck} libraspberrypi-bin libllvm14 libegl1-mesa libgles2-mesa libwayland-egl1-mesa"
       wget https://archive.raspbian.org/raspbian.public.key -O - | gpg --dearmor -o /usr/share/keyrings/archive-raspian-keyring.gpg
       echo 'deb [signed-by=/usr/share/keyrings/archive-raspian-keyring.gpg] http://raspbian.raspberrypi.org/raspbian/ bookworm main contrib non-free rpi' | tee -a /etc/apt/sources.list
@@ -63,7 +64,7 @@ if [[ -z "${SLIM}" ]]; then
 fi
 apt-get clean
 rm -rf /var/lib/apt/lists/*
-if [[ "${DEBIAN_VERSION}" == "bookworm" ]]; then
+if [[ "${VERSION_CODENAME}" == "bookworm" ]]; then
   chmod u+rwx,g+rwx,o+rwx /etc
   chmod u+rw,g+rw,o+rw /etc/localtime /etc/timezone
 fi

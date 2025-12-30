@@ -33,9 +33,10 @@ _start_mm() {
 }
 
 if [ -z "$TZ" ]; then
+  . /etc/os-release
   export TZ
   TZ="$(wget -qO - http://geoip.ubuntu.com/lookup | sed -n -e 's/.*<TimeZone>\(.*\)<\/TimeZone>.*/\1/p')"
-  if cat /etc/os-release | grep bookworm > /dev/null; then
+  if [ "$VERSION_CODENAME" = "bookworm" ]; then
     if [ -w /etc/localtime ]; then
       ln -fs "/usr/share/zoneinfo/$TZ" /etc/localtime
     else
