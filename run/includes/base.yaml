@@ -28,8 +28,6 @@ x-master: &master
 services:
   gui:
     volumes:
-      # removes error messages, not needed for running:
-      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
       # xserver:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - $HOME/.Xauthority:/home/node/.Xauthority
@@ -42,6 +40,8 @@ services:
       # labwc
       - WAYLAND_DISPLAY=wayland-0
       - XDG_RUNTIME_DIR=${LAB_WC_SOCK_DIR}
+      - DBUS_SYSTEM_BUS_ADDRESS=unix:path=${LAB_WC_SOCK_DIR}/bus
+      - DBUS_SESSION_BUS_ADDRESS=unix:path=${LAB_WC_SOCK_DIR}/bus
       # GPU
       - ELECTRON_ENABLE_GPU
     shm_size: "256mb"
