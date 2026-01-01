@@ -5,7 +5,7 @@
 
 services:
   magicmirror:
-    image: registry.gitlab.com/khassel/magicmirror:develop_debug24
+    image: registry.gitlab.com/khassel/magicmirror:develop_debug25
     environment:
       - XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir
       - DISPLAY=unix:0.0

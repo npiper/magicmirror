@@ -79,14 +79,14 @@ build_debian_fat:
     - !reference [.runtimebuild, script]
     - build
 
-build_debug22:
+build_debug_node_dev:
   variables:
-    NODE_VERSION: "22"
+    NODE_VERSION: "${NODE_VERSION_DEVELOP}"
   extends:
     - .build_debug
 
-build_debug24:
+build_debug_node:
   variables:
-    NODE_VERSION: "24"
+    NODE_VERSION: "${NODE_VERSION_MASTER}"
   extends:
     - .build_debug

@@ -10,18 +10,18 @@
   environment:
     name: "$CI_COMMIT_BRANCH/Test MagicMirror"
 
-test_debug24:
-  needs: ["build_debug24"]
+test_debug_node:
+  needs: ["build_debug_node"]
   image:
-    name: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug24
+    name: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug${NODE_VERSION_MASTER}
     entrypoint: [""]
   extends:
     - .test_debug
 
-test_debug22:
-  needs: ["build_debug22"]
+test_debug_node_dev:
+  needs: ["build_debug_node_dev"]
   image:
-    name: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug22
+    name: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug${NODE_VERSION_DEVELOP}
     entrypoint: [""]
   extends:
     - .test_debug

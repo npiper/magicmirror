@@ -65,7 +65,7 @@ Now we are in the container and can start MagicMirror², e.g. with `node --run s
 
 ## Used Container Image
 
-In the `compose.yaml` we use the container image `registry.gitlab.com/khassel/magicmirror:develop_debug24`. The last number is the used nodejs version, at the moment there are 2 images (`24` and `22`).
+In the `compose.yaml` we use the container image `registry.gitlab.com/khassel/magicmirror:develop_debug25`. The last number is the used nodejs version, at the moment there are 2 images (`25` and `24`).
 
 This image contains the `develop` branch of MagicMirror². There is a scheduled tasks which looks twice a day if the `develop` branch was updated and rebuild the image if so.
 
