@@ -59,4 +59,4 @@ Put the `start_script.sh` file beside your `compose.yaml` file. Additionally the
 
 ### Use the `fat` image
 
-Since release `v2.17.1` a new image `karsten13/magicmirror:fat` is provided. This image is based on `debian:latest` (not on `debian:slim` as the other images) and contains already many dependencies, e.g. python. You can try this image if you need packages missing in the normal images. Be aware that this image is really `fat` so pulling this image takes longer, especially on a raspberry pi.
+Since release `v2.17.1` a new image `karsten13/magicmirror:fat` is provided. This image contains already many dependencies, e.g. python. You can try this image if you need packages missing in the normal images. Be aware that this image is really `fat` so pulling this image takes longer, especially on a raspberry pi.
