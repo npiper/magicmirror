@@ -9,34 +9,34 @@ externalLinkDecoration: false
   {{< card link="https://hub.docker.com/r/karsten13/magicmirror/" title="Image `karsten13/magicmirror` on Docker Hub" image="https://img.shields.io/docker/pulls/karsten13/magicmirror.svg" >}}
 {{< /cards >}}
 
-The container image `karsten13/magicmirror` is available with these tags:
+The container image `karsten13/magicmirror` exists with the following tags:
 
-TAG                                             | OS/ARCH     | ELECTRON | DISTRO                            | DESCRIPTION
------------------------------------------------ | ----------- | -------- | ----------------------------------|------------------------------------------
-**latest** (or {{< param MAGICMIRROR >}})       | linux/amd64 | no       | debian {{< param DEBIANMASTER >}} | for x86, only `serveronly`-mode
-**latest** (or {{< param MAGICMIRROR >}})       | linux/arm   | yes      | debian 12                         | for raspberry pi 32-Bit os
-**latest** (or {{< param MAGICMIRROR >}})       | linux/arm64 | yes      | debian {{< param DEBIANMASTER >}} | for raspberry pi 64-Bit os
-**fat** (or {{< param MAGICMIRROR >}}_fat)      | linux/amd64 | yes      | debian {{< param DEBIANMASTER >}} | for x86
-**fat** (or {{< param MAGICMIRROR >}}_fat)      | linux/arm   | yes      | debian 12                         | for raspberry pi 32-Bit os
-**fat** (or {{< param MAGICMIRROR >}}_fat)      | linux/arm64 | yes      | debian {{< param DEBIANMASTER >}} | for raspberry pi 64-Bit os
-**alpine** (or {{< param MAGICMIRROR >}}_alpine | all 3 archs | no       | alpine                            | only `serveronly`-mode, smaller in size
+TAG                                             | OS/ARCH             | ELECTRON | DISTRO                            | DESCRIPTION
+----------------------------------------------- | ------------------- | -------- | ----------------------------------|------------------------------------------
+**latest** (or {{< param MAGICMIRROR >}})       | linux/amd64         | no       | Debian {{< param DEBIANMASTER >}} | for x86, only `serveronly`-mode
+**latest** (or {{< param MAGICMIRROR >}})       | linux/arm           | yes      | Debian 12                         | for Raspberry Pi 32-Bit OS
+**latest** (or {{< param MAGICMIRROR >}})       | linux/arm64         | yes      | Debian {{< param DEBIANMASTER >}} | for Raspberry Pi 64-Bit OS
+**fat** (or {{< param MAGICMIRROR >}}_fat)      | linux/amd64         | yes      | Debian {{< param DEBIANMASTER >}} | for x86
+**fat** (or {{< param MAGICMIRROR >}}_fat)      | linux/arm           | yes      | Debian 12                         | for Raspberry Pi 32-Bit OS
+**fat** (or {{< param MAGICMIRROR >}}_fat)      | linux/arm64         | yes      | Debian {{< param DEBIANMASTER >}} | for Raspberry Pi 64-Bit OS
+**alpine** (or {{< param MAGICMIRROR >}}_alpine | all 3 architectures | no       | Alpine                            | only `serveronly`-mode, smaller in size
 
-Version {{< param MAGICMIRROR >}} is the current release of MagicMirror. Older version tags remain on docker hub, the other tags are floating tags and therefore overwritten with every new build. The used Node version is {{< param NODEMASTER >}}.
+Version {{< param MAGICMIRROR >}} represents the current release of MagicMirror. Older version tags remain on docker hub. Other tags floats, every new build overwrites the existing ones. Used Node version: {{< param NODEMASTER >}}.
 
 > [!NOTE]
-> The difference between `latest` and `fat` is image size and installed debian packages. For most use cases the `latest` image is sufficient. Some modules need dependencies which are not includes in `latest`, e.g. `python` or compilers, so in such cases you should use `fat`.
+> Differences between `latest` and `fat`: Image size and installed Debian packages. For most use cases the `latest` image should meet your requirements. `latest` maybe lacks dependencies needed by some modules, for example `python` or compilers, so in such cases you should use `fat`.
 
 > [!CAUTION]
-> The following experimental images are not for production use:
+> Don't use the following experimental images in production:
 
 TAG                | OS/ARCH                     | ELECTRON | DISTRO                             | DESCRIPTION
 ------------------ | --------------------------- | -------- | -----------------------------------|------------------------------------------
-**develop**        | linux/amd64                 | no       | debian {{< param DEBIANDEVELOP >}} | for x86, only `serveronly`-mode
-**develop**        | linux/arm                   | yes      | debian 12                          | for raspberry pi 32-Bit os
-**develop**        | linux/arm64                 | yes      | debian {{< param DEBIANDEVELOP >}} | for raspberry pi 64-Bit os
-**develop_fat**    | linux/amd64                 | yes      | debian {{< param DEBIANDEVELOP >}} | for x86
-**develop_fat**    | linux/arm                   | yes      | debian 12                          | for raspberry pi 32-Bit os
-**develop_fat**    | linux/arm64                 | yes      | debian {{< param DEBIANDEVELOP >}} | for raspberry pi 64-Bit os
-**develop_alpine** | all 3 archs                 | no       | alpine                             | only `serveronly`-mode, smaller in size
+**develop**        | linux/amd64                 | no       | Debian {{< param DEBIANDEVELOP >}} | for x86, only `serveronly`-mode
+**develop**        | linux/arm                   | yes      | Debian 12                          | for Raspberry Pi 32-Bit OS
+**develop**        | linux/arm64                 | yes      | Debian {{< param DEBIANDEVELOP >}} | for Raspberry Pi 64-Bit OS
+**develop_fat**    | linux/amd64                 | yes      | Debian {{< param DEBIANDEVELOP >}} | for x86
+**develop_fat**    | linux/arm                   | yes      | Debian 12                          | for Raspberry Pi 32-Bit OS
+**develop_fat**    | linux/arm64                 | yes      | Debian {{< param DEBIANDEVELOP >}} | for Raspberry Pi 64-Bit OS
+**develop_alpine** | all 3 architectures         | no       | Alpine                             | only `serveronly`-mode, smaller in size
 
-These images are using the `develop` branch of the MagicMirror² git repository and Node version {{< param NODEDEVELOP >}} (except `linux/arm` which has to stay on debian 12 with Node version 22 because newer node images are not available for this architecture).
+These images use the `develop` branch of the MagicMirror² git repository and Node version {{< param NODEDEVELOP >}}. Except `linux/arm` which has to stay on Debian 12 with Node version 22. Node maintains no newer versions for this architecture.

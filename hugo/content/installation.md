@@ -10,41 +10,41 @@ breadcrumbs: false
 
 ### Docker
 
-See [Installation Intructions](https://docs.docker.com/engine/installation/)
+See [Installation Instructions](https://docs.docker.com/engine/installation/)
 
-### Docker postinstall
+### Docker post install
 
-To run `docker` commands without needing `sudo` please refer to the [linux postinstall documentation](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
+To run `docker` commands without needing `sudo` please refer to the [Linux post install documentation](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
 
-### Docker Compose
+### Docker compose
 
-As we are using `docker compose` commands the compose plugin must be installed. If missing you find [here](https://docs.docker.com/compose/install/linux/) instructions how to install it.
+If not already installed you find [here](https://docs.docker.com/compose/install/linux/) instructions how to install it.
 
 > [!IMPORTANT]
-> This setup needs `docker compose` version `2.20.3` or above, you can check the version with `docker compose version`. If you don't want to use compose, see [this section in the FAQ](/faq/no_compose/)
+> This setup needs `docker compose` version `2.20.3` or greater, you can check the version with `docker compose version`. If you don't want to use compose, see [this section in the FAQ](/faq/no_compose/)
 
 {{% /steps %}}
 
 
-## Additional prerequisites for running on a raspberry pi with Scenario **electron** ✌️ or **client** 👌
+## Prerequisites for running on a raspberry pi with Scenario **electron** ✌️ or **client** 👌
 
 {{% steps %}}
 
-### Disable Screensaver
+### Disable screensaver
 
-Disable the screensaver (depends on the underlying os), otherwise MagicMirror² will disappear after a while.
+Disable the screensaver (depends on the underlying OS), otherwise MagicMirror² will disappear after a while.
 
-### Wait for Network at Boot
+### Wait for network at boot
 
-Enable "Wait for Network at Boot" (with `sudo raspi-config`, navigate to "3 boot options" and choose "B2 Wait for Network at Boot"). If not set, some modules will remaining in "loading..." state because MagicMirror² starts to early.
+Enable "Wait for Network at Boot" (with `sudo raspi-config`, navigate to "3 boot options" and choose "B2 Wait for Network at Boot"). If not set, some modules will remaining in "loading…" state because MagicMirror² starts to early.
 
-### Disable Wlan Power Save
+### Disable WLAN power save
 
-When using wlan you should disable "power_save" (depends on the underlying os, e.g. `sudo iw wlan0 set power_save off`), otherwise MagicMirror² can not update the displayed data without working internet connection.
+When using WLAN you should disable "Power Save" (depends on the underlying OS, for example `sudo iw wlan0 set power_save off`), otherwise MagicMirror² can not update the displayed data without working internet connection.
 
 {{% /steps %}}
 
-## Installation of this Repository
+## Installation of this repository
 
 Open a shell in your home directory and run
 ```bash
@@ -72,9 +72,9 @@ For scenario **server** ☝️:
 MM_SCENARIO="server"
 ```
 > [!IMPORTANT]
-> You have to edit the value `MM_SERVER_PORTS` in the `.env` file if you are running scenario **server** and want to use another port.
+> You have to edit the value `MM_SERVER_PORTS` in the `.env` file if you run scenario **server** and want to use another port.
 
-This is already the default.
+That matches the default.
 
 For scenario **electron** ✌️:
 ```bash
@@ -88,13 +88,13 @@ MM_INIT="no_init"
 ```
 
 > [!IMPORTANT]
-> You have to edit the values `MM_CLIENT_PORT` and `MM_CLIENT_ADDRESS` in the `.env` file if you are running scenario **client**.
+> You have to edit the values `MM_CLIENT_PORT` and `MM_CLIENT_ADDRESS` in the `.env` file if you run scenario **client**.
 
 ### Using own compose file
 
-If you have an own compose file where you want to add this setup you can use the install script or manual install and then run `docker compose config` in the `magicmirror/run` folder. You can copy/paste the output in your existing compose file. There are more informations in the [FAQ](/faq/no_compose/).
+If you have an own compose file where you want to add this setup you can use the install script or manual install and then run `docker compose config` in the `magicmirror/run` folder. You can copy/paste the output in your existing compose file. You find more information in the [FAQ](/faq/no_compose/).
 
-A minimal compose file for scenario **server** ☝️ is:
+Here a minimal compose file for scenario **server** ☝️:
 
 ```yaml
 services:
@@ -120,7 +120,7 @@ docker compose up -d
 
 The container will start and with scenario **electron** ✌️ or **client** 👌 the MagicMirror² should appear on the screen of your pi. In server only mode opening a browser at `http://localhost:8080` should show the MagicMirror² (scenario **server** ☝️).
 
-> The container is configured to restart automatically so after executing `docker compose up -d` it will also restart after a reboot of your pi.
+> The default configuration restarts containers automatically so after executing `docker compose up -d` it will also restart after a reboot of your pi.
 
 
 You can see the logs with
@@ -141,13 +141,13 @@ docker compose down
 
 will stop and remove the MagicMirror² container.
 
-You can restart the container with one command `docker compose up -d --force-recreate`. This is e.g. necessary if you change the configuration.
+You can restart the container with one command `docker compose up -d --force-recreate`, for example necessary after configuration changes.
 
 ## Updating the image
 
-The MagicMirror²-Project has quarterly releases so every 1st of Jan/Apr/Jul/Oct a new version is released.
+The MagicMirror²-Project has quarterly releases so they release a new version every 1st of Jan/Apr/Jul/Oct.
 
-This project ist updated weekly every sunday to get (security) updates of the operating system.
+This project creates new container images weekly every Sunday to get (security) updates of the operating system.
 
 To get the newest image you have to update this locally. Navigate to `~/magicmirror/run` and execute
 
@@ -155,7 +155,7 @@ To get the newest image you have to update this locally. Navigate to `~/magicmir
 docker compose pull
 ```
 
-After the new image is pulled you have to restart the container with
+After the new pull completed you have to restart the container with
 
 ```bash
 docker compose up -d
@@ -165,9 +165,9 @@ docker compose up -d
 
 ## Volume permissions
 
-The container runs with userid=1000, this is normally the userid of the pi user.
+The container runs with UserId=1000, which normally matches the UserId of the pi user.
 
-The volumes on the host (~/magicmirror/mounts/*) are created at first start from the docker daemon with userid=0 (root), so we have to correct the permissions, otherwise the container cannot access the volumes. This is done by a `post_start` command which is started with the mm container.
+At first start the docker daemon creates the volumes on the host (~/magicmirror/mounts/*) with userid=0 (root). With these permissions the container can't access the volumes. To correct this the mm container executes a `post_start` command with every start.
 
 If you don't want or need this behavior you can remove it by setting `MM_INIT="no_init"` in the `.env` file.
 
@@ -188,4 +188,4 @@ sudo apt-get install -y git
 
 and then clone this repository.
 
-For installing you can use the install script as described above.
+For installing you can use the install script as described earlier.

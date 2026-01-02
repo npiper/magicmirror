@@ -14,3 +14,5 @@ dist/
 *.lock
 hugo/public/
 hugo/resources/
+.vale/styles
+!.vale/styles/config/vocabularies/own/*

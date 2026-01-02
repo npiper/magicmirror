@@ -1,0 +1,19 @@
+Synology
+decomposerize
+npm
+Dockerfile
+develop_.*
+param
+WLAN
+OS
+P[iI][rR]
+MMM
+CSS
+MagicMirror²
+Raspberry Pi OS Lite
+GPIO
+HDMI
+TAG
+ARCH
+TIP
+NOTE

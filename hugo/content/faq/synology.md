@@ -1,5 +1,5 @@
 ---
-title: Starting on synology nas errors when mounting volumes
+title: Starting on Synology NAS errors when mounting volumes
 breadcrumbs: false
 ---
 
@@ -10,6 +10,6 @@ Container mm Starting 1.3s
 Error response from daemon: Bind mount failed: '/var/services/homes/xy/magicmirror/mounts/config' does not exist
 ```
 
-This happens if the mount directories on the host are not present. If you use the defaults or the install script the mount directories are created when cloning this repository, but if you use a custom setup you have to creates these directories on your own.
+This happens if the mount directories misses on the host. If you clone this project using the defaults or the install script, this will create the mount directories. But if you use a custom setup you have to create these directories on your own.
 
-This seems to be a limitation of synology because the docker daemon does not have permission to create the folders under your home directory.
+This seems a limitation of Synology because the docker daemon lacks permission to create the folders under your home directory.

@@ -7,7 +7,7 @@ You have 3 choices:
 
 ### Build your own image
 
-This is the preferred solution if you need a lot of dependencies and start time of MagicMirror² matters. Here an example Dockerfile for [MMM-GoogleCast](https://github.com/ferferga/MMM-GoogleCast):
+Preferred solution if you need a lot of dependencies and start time of MagicMirror² matters. Here an example Dockerfile for [MMM-GoogleCast](https://github.com/ferferga/MMM-GoogleCast):
 
 ```bash
 FROM karsten13/magicmirror:latest
@@ -27,9 +27,9 @@ USER node
 
 ### Use a start script
 
-This is the preferred solution if you need only a few dependencies and start time of MagicMirror² doesn't matter. For this you have to write a `start_script.sh` file which can be used inside the container.
+Preferred solution if you need only a few dependencies and start time of MagicMirror² doesn't matter. For this you have to write a `start_script.sh` file. The container executes this script on start.
 
-Here an example for the content of `start_script.sh`. If you want to use e.g. [MMM-ServerStatus](https://github.com/XBCreepinJesus/MMM-ServerStatus) you need to install the missing `ping` command. This is done by this `start_script.sh`:
+Here an example for the content of `start_script.sh`. If you want to use for example [MMM-ServerStatus](https://github.com/XBCreepinJesus/MMM-ServerStatus) you need to install the missing `ping` command. The following `start_script.sh` implements this:
 
 ```bash
 #!/bin/sh
@@ -37,7 +37,7 @@ apt-get update
 apt-get install -y iputils-ping
 ```
 
-#### Option1: Config directory
+#### Option1: Configuration directory
 
 You can add the `start_script.sh` beside the `config.js` on the host (in `~/magicmirror/mounts/config`). Because the `apt-get` command require root access you must add
 
@@ -47,9 +47,9 @@ You can add the `start_script.sh` beside the `config.js` on the host (in `~/magi
 
 to your `compose.yaml`.
 
-#### Option2: Additional volume mount
+#### Option2: Extra volume mount
 
-Put the `start_script.sh` file beside your `compose.yaml` file. Additionally the `start_script.sh` file must be mapped into the container so you need to add a `volumes` section to your `compose.yaml` file (and add the root user to be able to install packages):
+Put the `start_script.sh` file beside your `compose.yaml` file. Additionally you need to add a `volumes` section in your `compose.yaml` file which maps the `start_script.sh` file into the container (and the root user for installing packages):
 
 ```yaml
     user: root
@@ -59,4 +59,4 @@ Put the `start_script.sh` file beside your `compose.yaml` file. Additionally the
 
 ### Use the `fat` image
 
-Since release `v2.17.1` a new image `karsten13/magicmirror:fat` is provided. This image contains already many dependencies, e.g. python. You can try this image if you need packages missing in the normal images. Be aware that this image is really `fat` so pulling this image takes longer, especially on a raspberry pi.
+Since release `v2.17.1` exists a new image `karsten13/magicmirror:fat`. This image contains already many dependencies, for example python. You can try this image if you need packages missing in the normal images. Notice the **fat** size of this image so pulling takes longer, especially on a raspberry pi.

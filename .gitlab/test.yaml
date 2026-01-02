@@ -167,3 +167,18 @@ test_install:
     - if: $TASK == "runtime" && $CI_COMMIT_BRANCH != "master"
       needs: ["build_debian_slim"]
 
+test_spelling:
+  stage: build
+  image:
+    name: jdkato/vale
+    entrypoint: [""]
+  script:
+    - |
+      vale sync
+      vale .
+      res="$(vale --no-exit --output JSON .)"
+      # check if json is empty
+      [ "$res" = "{}" ] || exit 1
+  rules:
+    - if: $TASK == "test_spelling"
+    - if: $TASK == "runtime"

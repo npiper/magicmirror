@@ -75,4 +75,4 @@ docker run  -d \
 You can stop and remove the container with `docker rm -f mm`.
 
 > [!TIP]
-> You can look for online tools where you can paste the content of your expanded `compose.yaml` which gives you the corresponding `docker run ...` commands, e.g. [decomposerize](https://www.decomposerize.com/).
+> You can look for online tools where you can paste the content of your expanded `compose.yaml` which gives you the corresponding `docker run ...` commands, for example [decomposerize](https://www.decomposerize.com/).

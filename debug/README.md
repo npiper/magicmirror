@@ -1,8 +1,8 @@
-# Debug Setup
+# Debug setup
 
-## General Setup
+## General setup
 
-I use a Windows machine to work with Github and Gitlab Repositories.
+Windows machine to work with GitHub and GitLab Repositories.
 
 ### Tools installed in Windows
 
@@ -13,9 +13,9 @@ I use a Windows machine to work with Github and Gitlab Repositories.
 - [Docker Desktop](https://docs.docker.com/desktop/)
 - [MobaXterm](https://mobaxterm.mobatek.net/), you can use any ssh program
 
-### Directory Structure in Windows
+### Directory structure in Windows
 
-As example I use 3 repositories:
+Example with 3 repositories:
 
 - k13/magicmirror: This repository with the docker setup
 - k13/MMM-Flights: A module for MagicMirror²
@@ -37,9 +37,9 @@ C:
 ```
 ### Update the `compose.yaml`
 
-MagicMirror² is started as Linux container in Wsl2. I have a debian distro running in Wsl2 and use MobaXterm to ssh into Wsl2 (you can use any ssh program). Drive `C:\` from Windows is mounted in Wsl2 under `/mnt/c`.
+MagicMirror² starts as Linux container in Wsl2. In Wsl2 runs a Debian distribution. MobaXterm establishes the ssh connection to Wsl2 (you can use any ssh program). You can access drive `C:\` from Windows in Wsl2 under `/mnt/c`.
 
-We use `docker compose run ...` later to start the container. This command uses the `compose.yaml` (which resides beside this README file).
+Starting the container take places with `docker compose run ...`. This command uses the `compose.yaml` (which resides beside this README file).
 
 This `compose.yaml` mounts some directories of the Windows machine into the container so you have to adjust the left side of these mounts (beginning with `/mnt/c/...`).
 
@@ -49,7 +49,7 @@ This `compose.yaml` mounts some directories of the Windows machine into the cont
       - /mnt/c/data/repo/foreign/MagicMirror:/home/node/magicmirror
 ```
 
-### Starting Debug Container
+### Starting debug container
 
 Navigate into the `debug` folder of this repository and use the following `docker compose run ...` command to start the container.
 
@@ -61,19 +61,19 @@ magicmirror/debug on  develop [✘!?]
 node@c45be1e7f6eb:~/magicmirror$
 ```
 
-Now we are in the container and can start MagicMirror², e.g. with `node --run server`. You should now see MagicMirror² when you use a browser in your Windows machine and navigate to http://localhost:8080.
+Now from inside the container you can start MagicMirror², for example with `node --run server`. You should now see MagicMirror² when you use a browser in your Windows machine and navigate to http://localhost:8080.
 
-## Used Container Image
+## Used container image
 
-In the `compose.yaml` we use the container image `registry.gitlab.com/khassel/magicmirror:develop_debug25`. The last number is the used nodejs version, at the moment there are 2 images (`25` and `24`).
+The `compose.yaml` uses the container image `registry.gitlab.com/khassel/magicmirror:develop_debug25`. The last number represents the used NodeJs version, at the moment `25` and `24`.
 
-This image contains the `develop` branch of MagicMirror². There is a scheduled tasks which looks twice a day if the `develop` branch was updated and rebuild the image if so.
+This image contains the `develop` branch of MagicMirror². A scheduled tasks looks twice a day for update of the `develop` branch and rebuild the image if so.
 
-## Use Cases
+## Use cases
 
-You can use an editor on your Windows machine to edit/adjust code e.g. in the MagicMirror² Core repository.
+You can use an editor on your Windows machine to edit/adjust code for example in the MagicMirror² Core repository.
 
-### Debug MagicMirror² Core (serveronly)
+### Debug MagicMirror² core (`serveronly`)
 
 ```bash
 node@e215bb6beca5:~/magicmirror$ node --run server
@@ -87,7 +87,7 @@ Use a browser and navigate to http://localhost:8080.
 
 Use `Ctrl+C` to stop MagicMirror².
 
-### Debug MagicMirror² Core (electron)
+### Debug MagicMirror² core (electron)
 
 ```bash
 node@e215bb6beca5:~/magicmirror$ node --run start:wayland
@@ -97,7 +97,7 @@ node@e215bb6beca5:~/magicmirror$ node --run start:wayland
 ...
 ```
 
-An electron windows will appear fullscreen (you can adjust size in electron options in `config.js`).
+An electron windows will appear full screen (you can adjust size in electron options in `config.js`).
 
 Use `Ctrl+C` to stop MagicMirror².
 
@@ -112,11 +112,11 @@ If you want to debug a specific module, you have to mount it into the container.
       - /mnt/c/data/repo/k13/MMM-Flights/debug/config.js:/home/node/magicmirror/config/config.js
 ```
 
-Beside the module folder a special `config.js` is mounted additionally.
+Beside the module folder you have to mount a special `config.js` additionally.
 
 ### Run MagicMirror² tests
 
-The container contains the full test framework, so you can run the tests of the MagicMirror² repository, e.g. `node --run test:unit`.
+The container contains the full test framework, so you can run the tests of the MagicMirror² repository, for example `node --run test:unit`.
 
 If you run the electron tests you should to this with
 
@@ -130,6 +130,6 @@ Otherwise the electron window will popup with every test.
 
 ### Running `npm install`
 
-If you need to update dependencies you can run `npm install` inside the container. This will work but is very slow because the linux container is writing into a windows filesystem.
+If you need to update dependencies you can run `npm install` inside the container. Because the Linux container writes into a windows filesystem, this process works slow.
 
-Better choice is to run `npm -g install` in this setup which uses another directory inside the container.
+Running `npm -g install` in this setup works faster, it uses another directory inside the container.
