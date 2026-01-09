@@ -19,32 +19,35 @@ x-master: &master
           chown -R ${MM_UID}:${MM_GID} config ${MM_MODULES_DIR} ${MM_CUSTOMCSS_FILE}
           chmod -R ${MM_CHMOD} config ${MM_MODULES_DIR} ${MM_CUSTOMCSS_FILE}
       user: root
-      environment:
-        - MM_UID
-        - MM_GID
-        - MM_CHMOD
-        - MM_INIT
 
 services:
+  deps_no:
+  deps_labwc:
+    depends_on:
+      labwc:
+        restart: true
+        condition: service_healthy
   gui:
     volumes:
       # xserver:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - $HOME/.Xauthority:/home/node/.Xauthority
       # labwc
-      - $LAB_WC_SOCK_DIR:$LAB_WC_SOCK_DIR
+      - $XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR
     privileged: true
     environment:
       # xserver:
       - DISPLAY=unix:0.0
       # labwc
       - WAYLAND_DISPLAY=wayland-0
-      - XDG_RUNTIME_DIR=${LAB_WC_SOCK_DIR}
-      - DBUS_SYSTEM_BUS_ADDRESS=unix:path=${LAB_WC_SOCK_DIR}/bus
-      - DBUS_SESSION_BUS_ADDRESS=unix:path=${LAB_WC_SOCK_DIR}/bus
+      - XDG_RUNTIME_DIR
+      - DBUS_SYSTEM_BUS_ADDRESS=unix:path=${XDG_RUNTIME_DIR}/bus
+      - DBUS_SESSION_BUS_ADDRESS=unix:path=${XDG_RUNTIME_DIR}/bus
       # GPU
       - ELECTRON_ENABLE_GPU
     shm_size: "256mb"
+    extends:
+      service: deps_${MM_LABWC}
   # server
   server:
     <<: *master

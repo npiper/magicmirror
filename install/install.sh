@@ -38,7 +38,7 @@ if command -v sudo > /dev/null; then
   _sudo="sudo"
 fi
 
-_info "--> Installing docker"
+_info "--> Check docker installation"
 
 if command -v docker > /dev/null; then
   echo "docker is already installed:"
@@ -67,14 +67,17 @@ git update-index --assume-unchanged ../mounts/css/custom.css || true
 
 if [[ -f "compose.yaml" ]]; then
   if [[ ! -f "includes/init.yaml" ]]; then
-    # cleanup old setup, remove later ...
+    # cleanup old setups, remove later ...
     sed -i -r 's|.*- includes/\$\{MM_INIT\}.yaml||g' compose.yaml
   fi
 else
   cp original.compose.yaml compose.yaml
 fi
 
-if [[ ! -f ".env" ]]; then
+if [[ -f ".env" ]]; then
+  # cleanup old setups, remove later ...
+  sed -i 's|^LAB_WC_SOCK_DIR="${XDG_RUNTIME_DIR:-/tmp/labwc}"|XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$MM_UID}"|g' .env
+else
   _info "--> Magicmirror container setup for scenario $scenario"
 
   echo "creating .env file"

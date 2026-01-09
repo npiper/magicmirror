@@ -37,4 +37,6 @@ ENV WLR_LIBINPUT_NO_DEVICES=1 \
     WLR_RENDERER_ALLOW_SOFTWARE=1 \
     LAB_WC_HIDE_CURSOR=true
 
+HEALTHCHECK --timeout=10s --start-period=60s CMD bash -c "[ -f /tmp/started.txt ]"
+
 ENTRYPOINT ["/entrypoint.sh"]
