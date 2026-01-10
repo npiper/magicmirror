@@ -96,7 +96,8 @@ start_dev_build:
   script:
     - |
       cd $MM_DIR
-      current_sha="$(git log -1 --pretty=format:"%H")"
+      # get second last commit (because build_info.sh added one):
+      current_sha="$(git rev-parse @~)"
       wget -q --output-document=repo.json https://api.github.com/repos/${GITREPO_NAME}/git/ref/heads/${DEV_BRANCH}
       remote_sha="$(cat repo.json | sed -rn 's|.*"sha": "([a-z,0-9]*).*|\1|p')"
       echo "current_sha: $current_sha"
