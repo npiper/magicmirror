@@ -92,6 +92,9 @@ usermod -a -G gpiob,gpiot,video,renderb,rendert node
 /tmp/build_info.sh "Runtime" "$GIT_INFO"
 rm -f /tmp/build_info.sh
 chown -R node:node $MM_DIR
+# needed for dbus-daemon:
+mkdir -p /run/dbus
+ln -sf /run/dbus/ /var/run/dbus
 EOF
 
 USER node
