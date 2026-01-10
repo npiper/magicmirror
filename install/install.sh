@@ -116,15 +116,14 @@ if ! id | grep "(docker)" > /dev/null; then
   [[ "$_uid" == "0" ]] || $_sudo usermod -aG docker "$USER"
   $_sudo docker compose up -d
 else
+  # remove stopped containers
+  docker compose rm -f
   # use up so mm can start if there are already local images
   docker compose up -d
-
-  if [[ "$_uid" == "0" ]]; then
-    # pull new images
-    docker compose pull
-    # restart (only if new images pulled)
-    docker compose up -d
-    # cleanup when running as root
-    docker image prune -f
-  fi
+  # pull new images
+  docker compose pull
+  # restart (only if new images pulled)
+  docker compose up -d
+  # cleanup when running as root
+  docker image prune -f
 fi

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo chown -R pi:pi $XDG_RUNTIME_DIR
+sudo chown -R pi:pi "$XDG_RUNTIME_DIR"
 sudo seatd -u pi -g pi &
 
 [[ -z $RANDR_POLL ]] && RANDR_POLL="1m"
@@ -19,7 +19,7 @@ fi
 randr_params() {
   if [[ -n "$RANDR_PARAMS" && "$(wlr-randr --json | gojq -r '.[].enabled' | head -n 1)" == "true" ]]; then
     echo "executing: wlr-randr $RANDR_PARAMS"
-    wlr-randr $RANDR_PARAMS
+    wlr-randr "$RANDR_PARAMS"
   fi
 }
 
@@ -37,7 +37,7 @@ startup() {
 startup &
 
 while true; do
-  sleep $RANDR_POLL
+  sleep "$RANDR_POLL"
   if [[ -f $startfile ]]; then
     if [[ $(wlr-randr 2>&1 | grep "failed to connect to display") ]]; then
       date

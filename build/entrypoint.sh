@@ -134,25 +134,20 @@ else
     if [ -z "$MM_SCENARIO" ]; then
       # ... and no scenario set, then add defaults depending if electron is installed:
       if command -v node_modules/.bin/electron > /dev/null; then
-        if [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
-          _start_mm node --run start:wayland
-        else
-          _start_mm node --run start
-        fi
+        MM_SCENARIO="electron"
       else
-        _start_mm node --run server
+        MM_SCENARIO="server"
+      fi
+    fi
+    # ... add defaults depending of the scenario:
+    if [ "$MM_SCENARIO" = "electron" ]; then
+      if [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
+        _start_mm node --run start:wayland
+      else
+        _start_mm node --run start
       fi
     else
-      # ... add defaults depending of the scenario:
-      if [ "$MM_SCENARIO" = "electron" ]; then
-        if [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
-          _start_mm node --run start:wayland
-        else
-          _start_mm node --run start
-        fi
-      else
-        _start_mm node --run server
-      fi
+      _start_mm node --run server
     fi
   else
     _start_mm "$@"
