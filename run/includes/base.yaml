@@ -33,16 +33,16 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - $HOME/.Xauthority:/home/node/.Xauthority
       # labwc
-      - $XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR
+      - $LAB_WC_SOCK_DIR:$LAB_WC_SOCK_DIR
     privileged: true
     environment:
       # xserver:
       - DISPLAY=unix:0.0
       # labwc
       - WAYLAND_DISPLAY=wayland-0
-      - XDG_RUNTIME_DIR
-      - DBUS_SYSTEM_BUS_ADDRESS=unix:path=${XDG_RUNTIME_DIR}/bus
-      - DBUS_SESSION_BUS_ADDRESS=unix:path=${XDG_RUNTIME_DIR}/bus
+      - XDG_RUNTIME_DIR=${LAB_WC_SOCK_DIR}
+      # - DBUS_SYSTEM_BUS_ADDRESS=unix:path=${LAB_WC_SOCK_DIR}/bus
+      # - DBUS_SESSION_BUS_ADDRESS=unix:path=${LAB_WC_SOCK_DIR}/bus
       # GPU
       - ELECTRON_ENABLE_GPU
     shm_size: "256mb"

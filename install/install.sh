@@ -76,7 +76,8 @@ fi
 
 if [[ -f ".env" ]]; then
   # cleanup old setups, remove later ...
-  sed -i 's|^LAB_WC_SOCK_DIR="${XDG_RUNTIME_DIR:-/tmp/labwc}"|XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$MM_UID}"|g' .env
+  sed -i 's|^LAB_WC_SOCK_DIR="${XDG_RUNTIME_DIR:-/tmp/labwc}"|LAB_WC_SOCK_DIR="/tmp/labwc"|g' .env
+  sed -i 's|^XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$MM_UID}"|LAB_WC_SOCK_DIR="/tmp/labwc"|g' .env
 else
   _info "--> Magicmirror container setup for scenario $scenario"
 
