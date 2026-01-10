@@ -9,7 +9,7 @@ include:
 default:
   image: ${BUILDKIT_IMG}:rootless
   tags:
-    - saas-linux-medium-amd64
+    - saas-linux-2xlarge-amd64
 
 variables:
   GIT_DEPTH: 1

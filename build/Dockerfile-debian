@@ -21,7 +21,7 @@ SHELL ["/bin/bash", "-c"]
 
 # procps, arp-scan needed for the module MMM-NetworkScanner
 # modules which needs sudo must be run as root, use `user: root` in docker-compose.yaml
-ARG GIT_INFO NODE_ENV SLIM FAT CI_PROJECT_ID TARGETARCH
+ARG GIT_INFO NODE_ENV SLIM FAT TARGETARCH
 RUN <<EOF
 set -e
 source /etc/os-release
@@ -61,6 +61,8 @@ fi
 if [[ "${NODE_ENV}" == "test" ]]; then
   _pck="${_pck} labwc libfaketime"
 fi
+# solves problem under arm64:
+apt-mark hold libc-bin
 DEBIAN_FRONTEND=noninteractive apt-get -qy --no-install-recommends install ${_pck}
 DEBIAN_FRONTEND=noninteractive apt-get -qy remove gnupg
 if [[ -z "${SLIM}" && "${TARGETARCH}" != "amd64" ]]; then
