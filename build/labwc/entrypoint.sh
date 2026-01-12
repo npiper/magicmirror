@@ -19,7 +19,7 @@ fi
 randr_params() {
   if [[ -n "$RANDR_PARAMS" && "$(wlr-randr --json | gojq -r '.[].enabled' | head -n 1)" == "true" ]]; then
     echo "executing: wlr-randr $RANDR_PARAMS"
-    wlr-randr "$RANDR_PARAMS"
+    wlr-randr $RANDR_PARAMS
   fi
 }
 
