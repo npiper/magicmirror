@@ -1,8 +1,8 @@
 # check=skip=InvalidDefaultArgInFrom
-ARG CI_REGISTRY_IMAGE BUILDER_TAG FAT NODE_VERSION DEBIAN_VERSION SLIM
+ARG CI_REGISTRY_IMAGE BUILDER_TAG FAT DEB_IMAGE SLIM
 FROM ${CI_REGISTRY_IMAGE}:${BUILDER_TAG}_${TARGETARCH}${FAT}_artifacts AS builder
-FROM dhi.io/node:${NODE_VERSION}-debian${DEBIAN_VERSION}-dev AS build-amd64
-FROM dhi.io/node:${NODE_VERSION}-debian${DEBIAN_VERSION}-dev AS build-arm64
+FROM ${DEB_IMAGE} AS build-amd64
+FROM ${DEB_IMAGE} AS build-arm64
 FROM node:22-bookworm${SLIM} AS build-arm
 FROM build-${TARGETARCH}
 LABEL maintainer="Karsten Hassel"

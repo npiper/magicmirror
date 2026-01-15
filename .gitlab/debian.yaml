@@ -6,16 +6,18 @@
       echo "Building debian image ..."
       [[ "${FAT}" != "_fat" ]] && export SLIM="-slim"
       [[ "${FAT}" == "_debug" ]] && export NODE_ENV="test" || export NODE_ENV="production"
-      export BUILDKIT_VARS="NODE_VERSION GIT_INFO CI_REGISTRY_IMAGE BUILDER_TAG DEBIAN_VERSION SLIM CI_PROJECT_ID FAT NODE_ENV"
+      if [[ "${CI_COMMIT_BRANCH}" == "master" ]]; then
+        export DEB_IMAGE="${DEB_IMAGE_MASTER}"
+      else
+        export DEB_IMAGE="${DEB_IMAGE_DEVELOP}"
+      fi
+      export BUILDKIT_VARS="DEB_IMAGE GIT_INFO CI_REGISTRY_IMAGE BUILDER_TAG SLIM CI_PROJECT_ID FAT NODE_ENV"
       if [[ "${FAT}" == "_debug" ]]; then
         export TARGETPLATFORM="linux/amd64"
       else
         export TARGETPLATFORM="linux/amd64,linux/arm64,linux/arm/v7"
-        if [[ "$NODE_VERSION" != "22" ]]; then
-          echo "using node version 22 for arm build because no node version $NODE_VERSION available for this architecture."
-        fi
       fi
-      set | grep -E "NODE_VERSION=|CI_REGISTRY_IMAGE=|BUILDER_TAG=|FAT=|DEBIAN_VERSION="
+      set | grep -E "DEB_IMAGE=|CI_REGISTRY_IMAGE=|BUILDER_TAG=|FAT="
 
 build_debian_slim:
   stage: build
@@ -68,7 +70,7 @@ build_debian_fat:
   variables:
     CNTNR_FILE_NAME: "Dockerfile-debian"
     FAT: "_debug"
-    PUSH_IMAGES: "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug${NODE_VERSION}"
+    PUSH_IMAGES: "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug${NODE}"
   needs:
     - "bld_art: [amd64_debug]"
   extends:
@@ -81,12 +83,12 @@ build_debian_fat:
 
 build_debug_node_dev:
   variables:
-    NODE_VERSION: "${NODE_VERSION_DEVELOP}"
+    NODE: "_curr"
   extends:
     - .build_debug
 
 build_debug_node:
   variables:
-    NODE_VERSION: "${NODE_VERSION_MASTER}"
+    NODE: "_lts"
   extends:
     - .build_debug

@@ -42,20 +42,22 @@ bld_art:
     - |
       set -e
       if [ "${CI_COMMIT_BRANCH}" = "master" ]; then
+        echo "CI_COMMIT_BRANCH is master"
+        export DEB_IMAGE="${DEB_IMAGE_MASTER}"
         cat buildvars
         if [ "$(cat buildvars | grep ${IMGKEY}_)" != "${IMGKEY}_" ]; then
           echo "no builder image rebuild"
           exit 0
         fi
-        echo "CI_COMMIT_BRANCH is master"
         export BuildRef="${MAGICMIRROR_VERSION}"
       else
         echo "CI_COMMIT_BRANCH is not master"
+        export DEB_IMAGE="${DEB_IMAGE_DEVELOP}"
         export BuildRef="develop"
       fi
       export PUSH_IMAGES="${CI_REGISTRY_IMAGE}:${BUILDER_TAG}_${IMGKEY}_artifacts"
-      set | grep -E "NODE_VERSION=|DEBIAN_VERSION=|BuildRef=|GITREPO_URL="
-      export BUILDKIT_VARS="NODE_VERSION DEBIAN_VERSION GIT_INFO IMGKEY BuildRef GITREPO_URL BUILDKIT_IMG"
+      set | grep -E "DEB_IMAGE=|BuildRef=|GITREPO_URL="
+      export BUILDKIT_VARS="DEB_IMAGE GIT_INFO IMGKEY BuildRef GITREPO_URL BUILDKIT_IMG"
       build
   rules:
     - if: $TASK == "runtime" && $CI_COMMIT_BRANCH == "master"

@@ -14,12 +14,16 @@ default:
 variables:
   GIT_DEPTH: 1
   TZ: "Europe/Berlin"
+  # renovate: datasource=github-tags depName=MagicMirrorOrg/MagicMirror
   MAGICMIRROR_VERSION: "v2.34.0"
-  NODE_VERSION_MASTER: "24"
-  NODE_VERSION_DEVELOP: "25"
-  DEBIAN_VERSION_MASTER: "13"
-  DEBIAN_VERSION_DEVELOP: "13"
-  ALPINE_VERSION: "3.22"
+  # renovate: datasource=docker depName=dhi.io/node
+  DEB_IMAGE_MASTER: dhi.io/node:24-debian13-dev
+  # renovate: datasource=docker depName=dhi.io/node
+  DEB_IMAGE_DEVELOP: dhi.io/node:25-debian13-dev
+  # renovate: datasource=docker depName=dhi.io/node
+  ALP_IMAGE_MASTER: dhi.io/node:24-alpine3.23-dev
+  # renovate: datasource=docker depName=dhi.io/node
+  ALP_IMAGE_DEVELOP: dhi.io/node:25-alpine3.23-dev
   GITREPO_NAME: "MagicMirrorOrg/MagicMirror"
   GITREPO_URL: "https://github.com/${GITREPO_NAME}.git"
 
@@ -36,6 +40,10 @@ variables:
     - |
       set -e
       # master or not
+      export NODE_VERSION_MASTER="$(echo ${DEB_IMAGE_MASTER} | sed -rn 's|.*node:([0-9]+).*|\1|p')"
+      export NODE_VERSION_DEVELOP="$(echo ${DEB_IMAGE_DEVELOP} | sed -rn 's|.*node:([0-9]+).*|\1|p')"
+      export DEBIAN_VERSION_MASTER="$(echo ${DEB_IMAGE_MASTER} | sed -rn 's|.*debian([0-9]+).*|\1|p')"
+      export DEBIAN_VERSION_DEVELOP="$(echo ${DEB_IMAGE_DEVELOP} | sed -rn 's|.*debian([0-9]+).*|\1|p')"
       if [[ "${CI_COMMIT_BRANCH}" == "master" ]]; then
         export BUILDER_TAG=${MAGICMIRROR_VERSION}
         [[ -z "${NODE_VERSION}" ]] && export NODE_VERSION=${NODE_VERSION_MASTER}
@@ -51,6 +59,7 @@ pages:
   stage: build
   image: hugomods/hugo:latest
   script:
+    - !reference [.init, script]
     - |
       cd hugo
       export HUGO_PARAMS_MAGICMIRROR="$MAGICMIRROR_VERSION"

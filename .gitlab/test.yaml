@@ -13,7 +13,7 @@
 test_debug_node:
   needs: ["build_debug_node"]
   image:
-    name: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug${NODE_VERSION_MASTER}
+    name: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug_lts
     entrypoint: [""]
   extends:
     - .test_debug
@@ -21,7 +21,7 @@ test_debug_node:
 test_debug_node_dev:
   needs: ["build_debug_node_dev"]
   image:
-    name: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug${NODE_VERSION_DEVELOP}
+    name: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug_curr
     entrypoint: [""]
   extends:
     - .test_debug
@@ -54,7 +54,7 @@ test_electron_rebuild:
 snyk_amd64:
   stage: test
   image:
-    name: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug${NODE_VERSION_DEVELOP}
+    name: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_debug_curr
     entrypoint: [""]
   script:
     - cd $MM_DIR

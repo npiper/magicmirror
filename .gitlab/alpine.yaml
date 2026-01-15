@@ -12,16 +12,18 @@ build_alpine:
     - |
       set -e
       echo "Building alpine image ..."
-      export BUILDKIT_VARS="NODE_VERSION GIT_INFO CI_REGISTRY_IMAGE BUILDER_TAG ALPINE_VERSION"
-      if [[ "$NODE_VERSION" != "22" ]]; then
-        echo "using node version 22 for arm build because no node version $NODE_VERSION available for this architecture."
+      if [[ "${CI_COMMIT_BRANCH}" == "master" ]]; then
+        export ALP_IMAGE="${ALP_IMAGE_MASTER}"
+      else
+        export ALP_IMAGE="${ALP_IMAGE_DEVELOP}"
       fi
+      export BUILDKIT_VARS="ALP_IMAGE GIT_INFO CI_REGISTRY_IMAGE BUILDER_TAG"
       if [[ "${CI_COMMIT_BRANCH}" == "master" ]]; then
         export PUSH_IMAGES="${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_alpine,${DOCKER_USER}/magicmirror:alpine,${DOCKER_USER}/magicmirror:${MAGICMIRROR_VERSION}_alpine"
       else
         export PUSH_IMAGES="${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}_alpine,${DOCKER_USER}/magicmirror:${CI_COMMIT_BRANCH}_alpine"
       fi
-      set | grep -E "NODE_VERSION=|CI_REGISTRY_IMAGE=|BUILDER_TAG="
+      set | grep -E "ALP_IMAGE=|CI_REGISTRY_IMAGE=|BUILDER_TAG="
       build
   extends:
     - .rule
