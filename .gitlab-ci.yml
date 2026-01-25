@@ -5,6 +5,9 @@ stages:
 include:
   - template: Security/Container-Scanning.gitlab-ci.yml
   - ".gitlab/*.yaml"
+  - project: khassel/magicmirror-helper
+    ref: master
+    file: start_runtime.yaml
 
 default:
   image: ${BUILDKIT_IMG}:rootless
@@ -120,29 +123,3 @@ start_develop_build:
       fi
   rules:
     - if: $CI_COMMIT_BRANCH == $DEV_BRANCH && $TASK == "checkupdates"
-
-start_master_build:
-  image:
-    name: alpine/crane:latest
-    entrypoint: [""]
-  script:
-    - |
-      crane auth login dhi.io -u $DOCKER_USER -p $DOCKER_PASS
-      apk add -q jq
-      echo "checking debian image ..."
-      datemm="$(crane config karsten13/magicmirror:latest | jq -r '.config.Labels."com.docker.dhi.created"')"
-      datenode="$(crane config ${DEB_IMAGE_MASTER} | jq -r '.config.Labels."com.docker.dhi.created"')"
-      if [ "$datemm" = "$datenode" ]; then
-        echo "debian image up to date, checking alpine image ..."
-        datemm="$(crane config karsten13/magicmirror:alpine | jq -r '.config.Labels."com.docker.dhi.created"')"
-        datenode="$(crane config ${ALP_IMAGE_MASTER} | jq -r '.config.Labels."com.docker.dhi.created"')"
-        if [ "$datemm" = "$datenode" ]; then
-          echo "alpine image up to date, nothing to do."
-          exit 0
-        fi
-      fi
-      echo "changed image(s) detected, starting master pipeline."
-      apk add -q curl
-      curl --request POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/trigger/pipeline?token=${CI_JOB_TOKEN}&ref=master&variables\[TASK\]=runtime"
-  rules:
-    - if: $CI_COMMIT_BRANCH == "master" && $TASK == "checkupdates"
