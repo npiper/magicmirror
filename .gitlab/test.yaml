@@ -136,12 +136,6 @@ test_install:
         echo "config.js does not exist or is not a file"
         ext=1
       fi
-      if [[ -L mounts/modules/default ]]; then
-        echo "modules/default exists and is a symlink"
-      else
-        echo "modules/default does not exist or is not a symlink"
-        ext=1
-      fi
       owned="$(stat -c '%u:%g' mounts/css/custom.css)"
       if [[ "$owned" == "1000:1000" ]]; then
         echo "custom.css has correct ownership $owned"

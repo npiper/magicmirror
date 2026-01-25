@@ -31,8 +31,7 @@ EOF
 
 USER node
 
-ENV NODE_ENV=production \
-    MM_OVERRIDE_DEFAULT_MODULES=true
+ENV NODE_ENV=production
 
 EXPOSE 8080
 HEALTHCHECK --timeout=10s --start-period=60s CMD ./health.sh

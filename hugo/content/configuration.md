@@ -36,17 +36,6 @@ For installing modules refer to the module website, you find the documentation o
 modules' appearance. For CSS basics please refer to
 [this forum article](https://forum.magicmirror.builders/topic/6808/css-101-getting-started-with-css-and-understanding-how-css-works), among many other places.
 
-## Default modules
-
-You find the default modules of MagicMirror² in the sub folder `modules/default`. These modules belong to the MagicMirror² project. Other modules (3rd-party) have their own git repositories. Because this setup needs the folder `modules` mounted on the host this setup creates a symlink for the `default` folder. This symlink points to a location inside the container (containing the `default` stuff of the repository).
-
-Who doesn't agree with this procedure can avoid the symlinking process by setting the environment variable `MM_OVERRIDE_DEFAULT_MODULES` to `false` in the `.env` file:
-```bash
-MM_OVERRIDE_DEFAULT_MODULES="false"
-```
-
-If you choose `MM_OVERRIDE_DEFAULT_MODULES="false"` you must provide your own version of the `default` folder as sub folder under `~/magicmirror/mounts/modules` on the host.
-
 ## Timezone
 
 The container tries to get the timezone by location. If this doesn't work you can set the timezone to a different value by editing the `compose.yaml` file. You have to add the timezone as environment variable:

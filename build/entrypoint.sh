@@ -1,7 +1,5 @@
 #!/bin/sh
 
-modules_dir="${MM_DIR}/modules"
-default_dir="${modules_dir}/default"
 config_dir="${MM_DIR}/config"
 css_dir="${MM_DIR}/css"
 
@@ -37,22 +35,6 @@ fi
 
 if [ -z "$TZ" ]; then
   _info "***WARNING*** could not set timezone, please set TZ variable in compose.yaml, see https://khassel.gitlab.io/magicmirror/configuration/#timezone"
-fi
-
-if [ "${MM_OVERRIDE_DEFAULT_MODULES}" = "true" ]; then
-  mkdir -p "${modules_dir}"
-  if [ -w "${modules_dir}" ]; then
-    if test -d "${default_dir}" && ! test -L "${default_dir}"; then
-      # if it's a real directory (not a symlink) then move it away
-      _info "renaming default modules to default-save"
-      rm -rf "${modules_dir}/default-save"
-      mv "${default_dir}" "${modules_dir}/default-save"
-    fi
-    _info "symlink default modules"
-    ln -sf "${MM_DIR}/__modules/default" "${MM_DIR}/modules"
-  else
-    _error "No write permission for ${modules_dir}, skipping symlinking default modules"
-  fi
 fi
 
 [ ! -f "${css_dir}/main.css" ] && MM_OVERRIDE_CSS=true

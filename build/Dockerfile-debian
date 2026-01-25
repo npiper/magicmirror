@@ -102,8 +102,7 @@ USER node
 ARG NODE_ENV
 ENV ELECTRON_DISABLE_SANDBOX=1 \
     DBUS_SESSION_BUS_ADDRESS="unix:path=/var/run/dbus/system_bus_socket" \
-    NODE_ENV=${NODE_ENV} \
-    MM_OVERRIDE_DEFAULT_MODULES=true
+    NODE_ENV=${NODE_ENV}
 
 RUN <<EOF
 if [[ "${NODE_ENV}" == "test" ]]; then

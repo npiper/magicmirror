@@ -5,7 +5,6 @@ x-master: &master
     - ${VOLUME_MODULES}
     - ${VOLUME_CSS}
   environment:
-    - MM_OVERRIDE_DEFAULT_MODULES
     - MM_SHOW_CURSOR
     - MM_SCENARIO
     - MM_MODULES_DIR
