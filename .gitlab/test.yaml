@@ -107,6 +107,7 @@ test_install:
     - |
       apk add --no-cache bash jq
       git status
+      chown 1000:1000 mounts/css/custom.css # workaround needed as long as this file is in the repo
       install/install.sh server
       sleep 5s
       echo "###################################################################"
@@ -124,26 +125,28 @@ test_install:
         echo "application not started"
         ext=1
       fi
-      if [[ -f mounts/css/custom.css ]]; then
+      docker logs mm
+      docker exec mm bash -c 'ls -la config'
+      if docker exec mm bash -c '[[ -f config/custom.css ]]'; then
         echo "custom.css exists and is a file"
       else
         echo "custom.css does not exist or is not a file"
         ext=1
       fi
-      if [[ -f mounts/config/config.js ]]; then
+      if docker exec mm bash -c '[[ -f config/config.js ]]'; then
         echo "config.js exists and is a file"
       else
         echo "config.js does not exist or is not a file"
         ext=1
       fi
-      owned="$(stat -c '%u:%g' mounts/css/custom.css)"
+      owned="$(docker exec mm bash -c 'stat -c "%u:%g" config/custom.css')"
       if [[ "$owned" == "1000:1000" ]]; then
         echo "custom.css has correct ownership $owned"
       else
         echo "custom.css has wrong ownership $owned"
         ext=1
       fi
-      owned="$(stat -c '%u:%g' mounts/config/config.js)"
+      owned="$(docker exec mm bash -c 'stat -c "%u:%g" config/config.js')"
       if [[ "$owned" == "1000:1000" ]]; then
         echo "config.js has correct ownership $owned"
       else

@@ -1,7 +1,6 @@
 #!/bin/sh
 
 config_dir="${MM_DIR}/config"
-css_dir="${MM_DIR}/css"
 
 _info() {
   echo "[entrypoint $(date +%T.%3N)] [INFO]  $1"
@@ -37,20 +36,6 @@ if [ -z "$TZ" ]; then
   _info "***WARNING*** could not set timezone, please set TZ variable in compose.yaml, see https://khassel.gitlab.io/magicmirror/configuration/#timezone"
 fi
 
-[ ! -f "${css_dir}/main.css" ] && MM_OVERRIDE_CSS=true
-
-if [ "${MM_OVERRIDE_CSS}" = "true" ]; then
-  if [ -w "${css_dir}" ]; then
-    _info "copy css files"
-    cp "${MM_DIR}/__css/*" "${css_dir}/"
-  else
-    _error "No write permission for ${css_dir}, skipping copying css files"
-  fi
-fi
-
-# create css/custom.css file https://github.com/MagicMirrorOrg/MagicMirror/issues/1977
-[ ! -f "${css_dir}/custom.css" ] && touch "${css_dir}/custom.css"
-
 if [ ! -f "${config_dir}/config.js" ]; then
   mkdir -p "${config_dir}"
   if [ -w "${config_dir}" ]; then
@@ -60,6 +45,15 @@ if [ ! -f "${config_dir}/config.js" ]; then
     _error "No write permission for ${config_dir}, skipping copying config.js"
   fi
 fi
+
+# migration of css/custom.css to config/custom.css (remove in a future release)
+# this is necessary because the implemented move inside mm will not work here because css/custom.css is mounted
+if [ -f "${MM_DIR}/css/custom.css" ]; then
+  cp -vnp "${MM_DIR}/css/custom.css" "${config_dir}/custom.css"
+fi
+
+# create custom.css file https://github.com/MagicMirrorOrg/MagicMirror/issues/1977
+[ ! -f "${config_dir}/custom.css" ] && touch "${config_dir}/custom.css"
 
 if [ "$MM_SHOW_CURSOR" = "true" ]; then
   _info "enable mouse cursor"

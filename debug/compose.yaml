@@ -32,8 +32,8 @@ services:
           cp config/config.js.sample config/config.js
           sed -i 's|address:.*|address: "0.0.0.0",|g;s|ipWhitelist:.*|ipWhitelist: [],|g' config/config.js
         fi
-        if [[ ! -f css/custom.css ]]; then
-          touch css/custom.css
+        if [[ ! -f config/custom.css ]]; then
+          touch config/custom.css
         fi
         labwc &  # use for running electron tests
         bash

@@ -6,11 +6,10 @@ breadcrumbs: false
 
 ## Configuration, Modules, and custom CSS
 
-After the first start of the container you find 3 directories
+After the first start of the container you find 2 directories
 ```bash
 ~/magicmirror/mounts/config
 ~/magicmirror/mounts/modules
-~/magicmirror/mounts/css
 ```
 
 `config` contains the `config.js`, you find more information [here](https://docs.magicmirror.builders/configuration/introduction.html).
@@ -32,7 +31,7 @@ For installing modules refer to the module website, you find the documentation o
 > [!IMPORTANT]
 > Installing or updating modules differs compared to a standard setup: You must do the `git clone ...`, `git pull` and `npm install` commands from inside the running container. For this you execute `docker exec -it mm bash` and in this shell you navigate to the `modules/MMM-...` folder. For exiting from the container you type `exit`.
 
-`css` contains the `custom.css` file, which you can use to override your
+`config` contains the `custom.css` file, which you can use to override your
 modules' appearance. For CSS basics please refer to
 [this forum article](https://forum.magicmirror.builders/topic/6808/css-101-getting-started-with-css-and-understanding-how-css-works), among many other places.
 

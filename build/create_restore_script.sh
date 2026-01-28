@@ -4,7 +4,7 @@ base="$(cd "$(dirname "$0")" && pwd)"
 
 restore="$base/restore.sh"
 config="${1:-config/config.js}"
-css="${MM_CUSTOMCSS_FILE:-"css/custom.css"}"
+css="config/custom.css"
 modules="${MM_MODULES_DIR:-"modules"}"
 
 _info() {

@@ -49,11 +49,6 @@ services:
         target: /opt/magic_mirror/modules
         bind:
           create_host_path: true
-      - type: bind
-        source: /mnt/z/k13/magicmirror/mounts/css
-        target: /opt/magic_mirror/css
-        bind:
-          create_host_path: true
 networks:
   default:
     name: run_default
@@ -67,7 +62,6 @@ docker run  -d \
     --restart unless-stopped \
     --volume ~/magicmirror/mounts/config:/opt/magic_mirror/config \
     --volume ~/magicmirror/mounts/modules:/opt/magic_mirror/modules \
-    --volume ~/magicmirror/mounts/css:/opt/magic_mirror/css \
     --name mm \
     karsten13/magicmirror:latest
 ```

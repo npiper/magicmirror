@@ -105,7 +105,6 @@ services:
     volumes:
       - ../mounts/config:/opt/magic_mirror/config
       - ../mounts/modules:/opt/magic_mirror/modules
-      - ../mounts/css/custom.css:/opt/magic_mirror/css/custom.css
     ports:
       - 8080:8080
 ```

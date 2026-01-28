@@ -8,7 +8,6 @@ x-master: &master
     - MM_SHOW_CURSOR
     - MM_SCENARIO
     - MM_MODULES_DIR
-    - MM_CUSTOMCSS_FILE
   post_start:
     - command:
         - /bin/sh
@@ -16,8 +15,8 @@ x-master: &master
         - |
           if [ "$MM_INIT" = "init" ]; then
             # update volume permissions
-            chown -R ${MM_UID}:${MM_GID} config ${MM_MODULES_DIR} ${MM_CUSTOMCSS_FILE}
-            chmod -R ${MM_CHMOD} config ${MM_MODULES_DIR} ${MM_CUSTOMCSS_FILE}
+            chown -R ${MM_UID}:${MM_GID} config ${MM_MODULES_DIR}
+            chmod -R ${MM_CHMOD} config ${MM_MODULES_DIR}
           fi
           if command -v node_modules/.bin/electron > /dev/null; then
             # if electron is installed then start dbus-daemon to avoid errors in the logs
