@@ -19,14 +19,12 @@ variables:
   TZ: "Europe/Berlin"
   # renovate: datasource=github-tags depName=MagicMirrorOrg/MagicMirror
   MAGICMIRROR_VERSION: "v2.34.0"
+  DEB_IMAGE_MASTER: "dhi.io/node:24-debian13-dev"
+  DEB_IMAGE_DEVELOP: "dhi.io/node:25-debian13-dev"
   # renovate: datasource=docker depName=dhi.io/node
-  DEB_IMAGE_MASTER: dhi.io/node:24-debian13-dev
+  ALP_IMAGE_MASTER: "dhi.io/node:24-alpine3.23-dev"
   # renovate: datasource=docker depName=dhi.io/node
-  DEB_IMAGE_DEVELOP: dhi.io/node:25-debian13-dev
-  # renovate: datasource=docker depName=dhi.io/node
-  ALP_IMAGE_MASTER: dhi.io/node:24-alpine3.23-dev
-  # renovate: datasource=docker depName=dhi.io/node
-  ALP_IMAGE_DEVELOP: dhi.io/node:25-alpine3.23-dev
+  ALP_IMAGE_DEVELOP: "dhi.io/node:25-alpine3.23-dev"
   GITREPO_NAME: "MagicMirrorOrg/MagicMirror"
   GITREPO_URL: "https://github.com/${GITREPO_NAME}.git"
 
