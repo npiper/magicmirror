@@ -107,7 +107,7 @@ if [[ "$scenario" != "server" ]]; then
     sed -i 's|^LAB_WC_SOCK_DIR=.*"|LAB_WC_SOCK_DIR="/tmp/labwc"|g' .env
   else
     # use xserver/wayland from host
-    sed -i 's|^LAB_WC_SOCK_DIR=.*"|LAB_WC_SOCK_DIR="${XDG_RUNTIME_DIR:-/tmp/labwc"|g' .env
+    sed -i 's|^LAB_WC_SOCK_DIR=.*"|LAB_WC_SOCK_DIR="${XDG_RUNTIME_DIR:-/tmp/labwc}"|g' .env
   fi
 fi
 
