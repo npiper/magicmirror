@@ -2,18 +2,17 @@
 
 ## General setup
 
-Windows machine to work with GitHub and GitLab Repositories.
+Linux machine to work with GitHub and GitLab Repositories.
 
-### Tools installed in Windows
+### Tools installed
 
 - [Visual Studio Code](https://code.visualstudio.com/), you can use any editor
 - [Git](https://git-scm.com/)
-- [GitExtensions](https://gitextensions.github.io/), optional
+- [MeGit](https://github.com/eclipsesource/megit), optional
 - [Wsl2](https://learn.microsoft.com/en-us/windows/wsl/install)
-- [Docker Desktop](https://docs.docker.com/desktop/)
-- [MobaXterm](https://mobaxterm.mobatek.net/), you can use any ssh program
+- [Docker](https://docs.docker.com/engine/install/)
 
-### Directory structure in Windows
+### Directory structure
 
 Example with 3 repositories:
 
@@ -22,31 +21,28 @@ Example with 3 repositories:
 - foreign/MagicMirror: The MagicMirror² repository
 
 ```bash
-C:
-└─data
-  └─repo
-    └─foreign
-    | └─MagicMirror
-    └─k13
-      └─magicmirror
-      | └─debug
-      |   └─compose.yaml
-      └─MMM-Flights
-        └─debug
-          └─config.js
+/
+└─repo
+  └─foreign
+  | └─MagicMirror
+  └─k13
+    └─magicmirror
+    | └─debug
+    |   └─compose.yaml
+    └─MMM-Flights
+      └─debug
+        └─config.js
 ```
 ### Update the `compose.yaml`
 
-MagicMirror² starts as Linux container in Wsl2. In Wsl2 runs a Debian distribution. MobaXterm establishes the ssh connection to Wsl2 (you can use any ssh program). You can access drive `C:\` from Windows in Wsl2 under `/mnt/c`.
+MagicMirror² starts as a Linux container with `docker compose run ...`. This command uses the `compose.yaml` (which resides beside this README file).
 
-Starting the container take places with `docker compose run ...`. This command uses the `compose.yaml` (which resides beside this README file).
-
-This `compose.yaml` mounts some directories of the Windows machine into the container so you have to adjust the left side of these mounts (beginning with `/mnt/c/...`).
+This `compose.yaml` mounts some directories of the host machine into the container so you have to adjust the left side of these mounts (beginning with `/repo/...`).
 
 ```yaml
     volumes:
       # mount local project dir
-      - /mnt/c/data/repo/foreign/MagicMirror:/home/node/magicmirror
+      - /repo/foreign/MagicMirror:/home/node/magicmirror
 ```
 
 ### Starting debug container
@@ -54,7 +50,7 @@ This `compose.yaml` mounts some directories of the Windows machine into the cont
 Navigate into the `debug` folder of this repository and use the following `docker compose run ...` command to start the container.
 
 ```bash
-❯ cd /mnt/c/data/repo/k13/magicmirror/debug/
+❯ cd /repo/k13/magicmirror/debug/
 
 magicmirror/debug on  develop [✘!?]
 ❯ docker compose run --rm --name mm --service-ports magicmirror
@@ -89,6 +85,8 @@ Use `Ctrl+C` to stop MagicMirror².
 
 ### Debug MagicMirror² core (electron)
 
+You have to adjust some parameters in `compose.yaml` (`XDG_RUNTIME_DIR` environment variable and extra volume mounts, see comments inside `compose.yaml` for details).
+
 ```bash
 node@e215bb6beca5:~/magicmirror$ node --run start:wayland
 [2025-11-05 21:20:54.957] [LOG]   [app] Starting MagicMirror: v2.34.0-develop
@@ -108,8 +106,8 @@ If you want to debug a specific module, you have to mount it into the container.
 ```yaml
     volumes:
       # mount module to test with config
-      - /mnt/c/data/repo/k13/MMM-Flights:/home/node/magicmirror/modules/MMM-Flights
-      - /mnt/c/data/repo/k13/MMM-Flights/debug/config.js:/home/node/magicmirror/config/config.js
+      - /repo/k13/MMM-Flights:/home/node/magicmirror/modules/MMM-Flights
+      - /repo/k13/MMM-Flights/debug/config.js:/home/node/magicmirror/config/config.js
 ```
 
 Beside the module folder you have to mount a special `config.js` additionally.
@@ -117,19 +115,3 @@ Beside the module folder you have to mount a special `config.js` additionally.
 ### Run MagicMirror² tests
 
 The container contains the full test framework, so you can run the tests of the MagicMirror² repository, for example `node --run test:unit`.
-
-If you run the electron tests you should to this with
-
-```bash
-export XDG_RUNTIME_DIR=/tmp
-labwc &
-node --run test:electron
-```
-
-Otherwise the electron window will popup with every test.
-
-### Running `npm install`
-
-If you need to update dependencies you can run `npm install` inside the container. Because the Linux container writes into a windows filesystem, this process works slow.
-
-Running `npm -g install` in this setup works faster, it uses another directory inside the container.

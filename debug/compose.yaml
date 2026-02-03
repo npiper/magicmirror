@@ -1,15 +1,15 @@
 # start with: dc run --rm --name mm --service-ports magicmirror
 
 # if you need another (forked) mm repo add it as new remote to your git repo in windows and checkout the branch needed
-# if you need to run "npm i" use "npm -g i" instead (the last one installs in /opt/magic_mirror/node_modules/ whereas "npm i" would install into "/mnt/c/data/repo/foreign/MagicMirror" which is very slow)
 
 services:
   magicmirror:
     image: registry.gitlab.com/khassel/magicmirror:develop_debug_curr
+    container_name: mm
     environment:
-      - XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir
-      - DISPLAY=unix:0.0
-      # - XDG_RUNTIME_DIR=/tmp # use for running electron tests
+      - XDG_RUNTIME_DIR=/tmp # use for running electron tests
+      # - XDG_RUNTIME_DIR # use for running electron app on host display
+      - DISPLAY=:0
       - NPM_CONFIG_PREFIX=/opt/magic_mirror/node_modules/
       - WAYLAND_DISPLAY=wayland-0
       - WLR_BACKENDS=headless
@@ -19,8 +19,8 @@ services:
       # - FAKETIME=-1d
     ports:
       - "8080:8080"
-    stdin_open: true
     shm_size: "268435456"
+    stdin_open: true
     tty: true
     entrypoint:
       - /bin/bash
@@ -35,14 +35,45 @@ services:
         if [[ ! -f css/custom.css ]]; then
           touch css/custom.css
         fi
-        # labwc &  # use for running electron tests
-        /bin/bash
+        labwc &  # use for running electron tests
+        bash
+    healthcheck:
+      disable: true
+    working_dir: /home/node/magicmirror
     volumes:
       # mount local project dir
-      - /mnt/c/data/repo/foreign/MagicMirror:/home/node/magicmirror
-      # mount XDG_RUNTIME_DIR, needed for electron
-      - /mnt/wslg/runtime-dir:/mnt/wslg/runtime-dir
+      - /repo/foreign/MagicMirror:/home/node/magicmirror
+      # mount XDG_RUNTIME_DIR and X11 stuff, needed for electron and displaying mm on host screen
+      # - $XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR
+      # - /tmp/.X11-unix:/tmp/.X11-unix
+      # - $HOME/.Xauthority:/home/node/.Xauthority
       # mount module to test with config
-      # - /mnt/c/data/repo/k13/MMM-Flights:/home/node/magicmirror/modules/MMM-Flights
-      # - /mnt/c/data/repo/k13/MMM-Flights/debug/config.js:/home/node/magicmirror/config/config.js
-    working_dir: /home/node/magicmirror
+      # - /repo/k13/MMM-Flights:/home/node/magicmirror/modules/MMM-Flights
+      # - /repo/k13/MMM-Flights/debug/config.js:/home/node/magicmirror/config/config.js
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.mm.loadbalancer.server.port=8080"
+      - "traefik.http.routers.mm.service=mm"
+      - "traefik.http.routers.mm.entrypoints=http"
+      - "traefik.http.routers.mm.rule=Host(`localhost`) && PathPrefix(`/mm/`)"
+      - "traefik.http.routers.mm.middlewares=mm-stripprefix"
+      - "traefik.http.middlewares.mm-stripprefix.stripprefix.prefixes=/mm"
+
+  # traefik:
+  #   image: traefik:latest
+  #   container_name: traefik
+  #   restart: unless-stopped
+  #   command:
+  #     - "--providers.docker=true"
+  #     - "--providers.docker.exposedByDefault=false"
+  #     - "--entryPoints.http.address=:80"
+  #     - "--global.sendAnonymousUsage=false"
+  #     - "--log.level=INFO"
+  #     - "--api=true"
+  #     - "--api.dashboard=true"
+  #     - "--api.insecure=true"
+  #   ports:
+  #     - "80:80"
+  #     - "8888:8080" # traefik dashboard localhost:8888
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
