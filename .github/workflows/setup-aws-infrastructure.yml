@@ -1,0 +1,488 @@
+name: Setup AWS Infrastructure (One-time)
+
+# Idempotent — safe to re-run. Each step checks for existing resources before creating.
+#
+# Required repository SECRETS:
+#   AWS_ACCESS_KEY_ID          — IAM deploy user access key
+#   AWS_SECRET_ACCESS_KEY      — IAM deploy user secret key
+#   GCAL_SECRET_URL            — Google Calendar secret iCal URL
+#   GOOGLE_OAUTH_CLIENT_SECRET — Google OAuth 2.0 client secret (from Google Cloud Console)
+#
+# Required repository VARIABLES:
+#   GOOGLE_OAUTH_CLIENT_ID     — Google OAuth 2.0 client ID (from Google Cloud Console)
+#   GOOGLE_ALLOWED_EMAIL       — Google account to allow (e.g. yourname@gmail.com)
+#
+# The IAM user running this workflow needs the following permissions IN ADDITION
+# to those in the deploy workflow:
+#   iam:CreateRole, iam:GetRole, iam:AttachRolePolicy, iam:PutRolePolicy
+#   ec2:CreateSecurityGroup, ec2:AuthorizeSecurityGroupIngress, ec2:DescribeSecurityGroups
+#   elasticloadbalancing:* (create ALB, target group, listener, rules)
+#   acm:RequestCertificate, acm:DescribeCertificate, acm:ListCertificates, acm:AddTagsToCertificate
+#   route53:ChangeResourceRecordSets, route53:ListResourceRecordSets
+#   secretsmanager:CreateSecret, secretsmanager:PutSecretValue, secretsmanager:DescribeSecret
+#   logs:CreateLogGroup, logs:PutRetentionPolicy
+#   ecs:CreateCluster, ecr:CreateRepository, ecr:DescribeRepositories
+
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        description: 'AWS region'
+        required: true
+        default: 'eu-west-1'
+        type: string
+      vpc_id:
+        description: 'VPC ID to deploy into (e.g. vpc-0abc1234)'
+        required: true
+        type: string
+      subnet_ids:
+        description: 'Comma-separated public subnet IDs — min 2 AZs (e.g. subnet-aaa,subnet-bbb)'
+        required: true
+        type: string
+      domain:
+        description: 'Public domain name'
+        required: false
+        default: 'yourname.me'
+        type: string
+      hosted_zone_id:
+        description: 'Route 53 Hosted Zone ID for the domain (e.g. Z1ABCDEF12345)'
+        required: true
+        type: string
+
+jobs:
+  setup:
+    name: Provision Base Infrastructure
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION:           ${{ inputs.region }}
+      DOMAIN:               ${{ inputs.domain }}
+      VPC_ID:               ${{ inputs.vpc_id }}
+      HOSTED_ZONE_ID:       ${{ inputs.hosted_zone_id }}
+      GOOGLE_CLIENT_ID:     ${{ vars.GOOGLE_OAUTH_CLIENT_ID }}
+      GOOGLE_ALLOWED_EMAIL: ${{ vars.GOOGLE_ALLOWED_EMAIL }}
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ inputs.region }}
+
+      - name: Get AWS account ID
+        id: account
+        run: |
+          echo "id=$(aws sts get-caller-identity --query Account --output text)" >> "$GITHUB_OUTPUT"
+
+      # ── 1. ECR Repository ───────────────────────────────────────────────────
+      - name: Create ECR repository
+        run: |
+          aws ecr describe-repositories \
+            --repository-names magicmirror-wallboard \
+            --region "$AWS_REGION" 2>/dev/null \
+          || aws ecr create-repository \
+              --repository-name magicmirror-wallboard \
+              --region "$AWS_REGION" \
+              --image-scanning-configuration scanOnPush=true \
+              --tags Key=project,Value=wallboard
+
+      # ── 2. ECS Cluster ──────────────────────────────────────────────────────
+      - name: Create ECS cluster
+        run: |
+          aws ecs create-cluster \
+            --cluster-name wallboard-cluster \
+            --capacity-providers FARGATE \
+            --default-capacity-provider-strategy capacityProvider=FARGATE,weight=1 \
+            --tags key=project,value=wallboard \
+            --region "$AWS_REGION"
+
+      # ── 3. CloudWatch Log Group ─────────────────────────────────────────────
+      - name: Create CloudWatch log group
+        run: |
+          aws logs create-log-group \
+            --log-group-name /ecs/magicmirror-wallboard \
+            --region "$AWS_REGION" 2>/dev/null || true
+          aws logs put-retention-policy \
+            --log-group-name /ecs/magicmirror-wallboard \
+            --retention-in-days 30 \
+            --region "$AWS_REGION"
+
+      # ── 4. IAM Roles ────────────────────────────────────────────────────────
+      - name: Create ECS Task Execution Role
+        env:
+          ACCOUNT_ID: ${{ steps.account.outputs.id }}
+        run: |
+          aws iam get-role --role-name ecsTaskExecutionRole 2>/dev/null \
+          || aws iam create-role \
+              --role-name ecsTaskExecutionRole \
+              --assume-role-policy-document '{
+                "Version": "2012-10-17",
+                "Statement": [{
+                  "Effect": "Allow",
+                  "Principal": {"Service": "ecs-tasks.amazonaws.com"},
+                  "Action": "sts:AssumeRole"
+                }]
+              }'
+
+          aws iam attach-role-policy \
+            --role-name ecsTaskExecutionRole \
+            --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+          aws iam put-role-policy \
+            --role-name ecsTaskExecutionRole \
+            --policy-name WallboardSecretsAccess \
+            --policy-document "{
+              \"Version\": \"2012-10-17\",
+              \"Statement\": [{
+                \"Sid\": \"ReadWallboardSecrets\",
+                \"Effect\": \"Allow\",
+                \"Action\": \"secretsmanager:GetSecretValue\",
+                \"Resource\": \"arn:aws:secretsmanager:${AWS_REGION}:${ACCOUNT_ID}:secret:wallboard/*\"
+              }]
+            }"
+
+      - name: Create ECS Task Role
+        run: |
+          aws iam get-role --role-name ecsTaskRole 2>/dev/null \
+          || aws iam create-role \
+              --role-name ecsTaskRole \
+              --assume-role-policy-document '{
+                "Version": "2012-10-17",
+                "Statement": [{
+                  "Effect": "Allow",
+                  "Principal": {"Service": "ecs-tasks.amazonaws.com"},
+                  "Action": "sts:AssumeRole"
+                }]
+              }'
+
+      # ── 5. Security Groups ──────────────────────────────────────────────────
+      - name: Create ALB security group
+        id: alb-sg
+        run: |
+          SG_ID=$(aws ec2 describe-security-groups \
+            --filters "Name=group-name,Values=wallboard-alb-sg" \
+                      "Name=vpc-id,Values=${VPC_ID}" \
+            --query 'SecurityGroups[0].GroupId' \
+            --output text 2>/dev/null)
+
+          if [ -z "$SG_ID" ] || [ "$SG_ID" = "None" ]; then
+            SG_ID=$(aws ec2 create-security-group \
+              --group-name wallboard-alb-sg \
+              --description "Wallboard ALB — allow HTTP/HTTPS inbound from internet" \
+              --vpc-id "$VPC_ID" \
+              --query GroupId --output text)
+
+            aws ec2 authorize-security-group-ingress \
+              --group-id "$SG_ID" --protocol tcp --port 443 --cidr 0.0.0.0/0
+            aws ec2 authorize-security-group-ingress \
+              --group-id "$SG_ID" --protocol tcp --port 80  --cidr 0.0.0.0/0
+          fi
+          echo "sg_id=$SG_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Create ECS task security group
+        id: ecs-sg
+        run: |
+          ALB_SG="${{ steps.alb-sg.outputs.sg_id }}"
+
+          SG_ID=$(aws ec2 describe-security-groups \
+            --filters "Name=group-name,Values=wallboard-ecs-sg" \
+                      "Name=vpc-id,Values=${VPC_ID}" \
+            --query 'SecurityGroups[0].GroupId' \
+            --output text 2>/dev/null)
+
+          if [ -z "$SG_ID" ] || [ "$SG_ID" = "None" ]; then
+            SG_ID=$(aws ec2 create-security-group \
+              --group-name wallboard-ecs-sg \
+              --description "Wallboard ECS — allow port 8080 from ALB only" \
+              --vpc-id "$VPC_ID" \
+              --query GroupId --output text)
+
+            aws ec2 authorize-security-group-ingress \
+              --group-id "$SG_ID" \
+              --protocol tcp --port 8080 \
+              --source-group "$ALB_SG"
+          fi
+          echo "sg_id=$SG_ID" >> "$GITHUB_OUTPUT"
+
+      # ── 6. ACM Certificate ──────────────────────────────────────────────────
+      - name: Request ACM certificate
+        id: acm
+        run: |
+          CERT_ARN=$(aws acm list-certificates \
+            --region "$AWS_REGION" \
+            --query "CertificateSummaryList[?DomainName=='${DOMAIN}'].CertificateArn | [0]" \
+            --output text)
+
+          if [ -z "$CERT_ARN" ] || [ "$CERT_ARN" = "None" ]; then
+            CERT_ARN=$(aws acm request-certificate \
+              --domain-name "$DOMAIN" \
+              --subject-alternative-names "*.${DOMAIN}" \
+              --validation-method DNS \
+              --region "$AWS_REGION" \
+              --query CertificateArn --output text)
+            echo "Requested new certificate: $CERT_ARN"
+          else
+            echo "Using existing certificate: $CERT_ARN"
+          fi
+          echo "arn=$CERT_ARN" >> "$GITHUB_OUTPUT"
+
+      - name: Add ACM DNS validation records to Route 53
+        run: |
+          CERT_ARN="${{ steps.acm.outputs.arn }}"
+
+          # Allow a moment for cert metadata to become available
+          sleep 15
+
+          aws acm describe-certificate \
+            --certificate-arn "$CERT_ARN" \
+            --region "$AWS_REGION" \
+            --query 'Certificate.DomainValidationOptions[*].ResourceRecord' \
+            --output json \
+          | jq -c '.[] | select(.Name != null)' | while read -r record; do
+            NAME=$(echo "$record"  | jq -r '.Name')
+            VALUE=$(echo "$record" | jq -r '.Value')
+
+            aws route53 change-resource-record-sets \
+              --hosted-zone-id "$HOSTED_ZONE_ID" \
+              --change-batch "{
+                \"Changes\": [{
+                  \"Action\": \"UPSERT\",
+                  \"ResourceRecordSet\": {
+                    \"Name\": \"$NAME\",
+                    \"Type\": \"CNAME\",
+                    \"TTL\": 300,
+                    \"ResourceRecords\": [{\"Value\": \"$VALUE\"}]
+                  }
+                }]
+              }" || true
+          done
+
+          echo "Waiting for certificate validation (up to 10 min)..."
+          aws acm wait certificate-validated \
+            --certificate-arn "$CERT_ARN" \
+            --region "$AWS_REGION"
+
+      # ── 7. Application Load Balancer ────────────────────────────────────────
+      - name: Create Application Load Balancer
+        id: alb
+        run: |
+          ALB_SG="${{ steps.alb-sg.outputs.sg_id }}"
+          # Convert comma-separated subnet list to space-separated for CLI
+          SUBNETS=$(echo "${{ inputs.subnet_ids }}" | tr ',' ' ')
+
+          ALB_ARN=$(aws elbv2 describe-load-balancers \
+            --names wallboard-alb \
+            --query 'LoadBalancers[0].LoadBalancerArn' \
+            --output text 2>/dev/null) || true
+
+          if [ -z "$ALB_ARN" ] || [ "$ALB_ARN" = "None" ]; then
+            ALB_ARN=$(aws elbv2 create-load-balancer \
+              --name wallboard-alb \
+              --subnets $SUBNETS \
+              --security-groups "$ALB_SG" \
+              --scheme internet-facing \
+              --type application \
+              --ip-address-type ipv4 \
+              --tags Key=project,Value=wallboard \
+              --query 'LoadBalancers[0].LoadBalancerArn' --output text)
+          fi
+
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --load-balancer-arns "$ALB_ARN" \
+            --query 'LoadBalancers[0].DNSName' --output text)
+          ALB_ZONE=$(aws elbv2 describe-load-balancers \
+            --load-balancer-arns "$ALB_ARN" \
+            --query 'LoadBalancers[0].CanonicalHostedZoneId' --output text)
+
+          echo "arn=$ALB_ARN"   >> "$GITHUB_OUTPUT"
+          echo "dns=$ALB_DNS"   >> "$GITHUB_OUTPUT"
+          echo "zone=$ALB_ZONE" >> "$GITHUB_OUTPUT"
+
+      - name: Create target group
+        id: tg
+        run: |
+          TG_ARN=$(aws elbv2 describe-target-groups \
+            --names wallboard-tg \
+            --query 'TargetGroups[0].TargetGroupArn' \
+            --output text 2>/dev/null) || true
+
+          if [ -z "$TG_ARN" ] || [ "$TG_ARN" = "None" ]; then
+            TG_ARN=$(aws elbv2 create-target-group \
+              --name wallboard-tg \
+              --protocol HTTP \
+              --port 8080 \
+              --vpc-id "$VPC_ID" \
+              --target-type ip \
+              --health-check-path /ourwallboard/ \
+              --health-check-interval-seconds 30 \
+              --healthy-threshold-count 2 \
+              --tags Key=project,Value=wallboard \
+              --query 'TargetGroups[0].TargetGroupArn' --output text)
+          fi
+          echo "arn=$TG_ARN" >> "$GITHUB_OUTPUT"
+
+      - name: Create HTTPS listener (with HTTP→HTTPS redirect)
+        run: |
+          CERT_ARN="${{ steps.acm.outputs.arn }}"
+          ALB_ARN="${{ steps.alb.outputs.arn }}"
+          TG_ARN="${{ steps.tg.outputs.arn }}"
+
+          # HTTP listener — redirect to HTTPS
+          HTTP_LISTENER=$(aws elbv2 describe-listeners \
+            --load-balancer-arn "$ALB_ARN" \
+            --query 'Listeners[?Port==`80`].ListenerArn | [0]' \
+            --output text 2>/dev/null)
+          if [ -z "$HTTP_LISTENER" ] || [ "$HTTP_LISTENER" = "None" ]; then
+            aws elbv2 create-listener \
+              --load-balancer-arn "$ALB_ARN" \
+              --protocol HTTP --port 80 \
+              --default-actions \
+                Type=redirect,RedirectConfig="{Protocol=HTTPS,Port=443,StatusCode=HTTP_301}"
+          fi
+
+          # HTTPS listener — default 403, specific rule for /ourwallboard*
+          LISTENER_ARN=$(aws elbv2 describe-listeners \
+            --load-balancer-arn "$ALB_ARN" \
+            --query 'Listeners[?Port==`443`].ListenerArn | [0]' \
+            --output text 2>/dev/null)
+          if [ -z "$LISTENER_ARN" ] || [ "$LISTENER_ARN" = "None" ]; then
+            LISTENER_ARN=$(aws elbv2 create-listener \
+              --load-balancer-arn "$ALB_ARN" \
+              --protocol HTTPS --port 443 \
+              --certificates CertificateArn="$CERT_ARN" \
+              --ssl-policy ELBSecurityPolicy-TLS13-1-2-2021-06 \
+              --default-actions \
+                Type=fixed-response,FixedResponseConfig="{MessageBody=Forbidden,StatusCode=403,ContentType=text/plain}" \
+              --query 'Listeners[0].ListenerArn' --output text)
+
+            # Rule priority 10: /ourwallboard* → authenticate-oidc (Google) → forward
+            # Builds actions JSON into a temp file to safely handle secrets in shell
+            GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}"
+            cat > /tmp/oidc-actions.json <<EOF
+[
+  {
+    "Type": "authenticate-oidc",
+    "Order": 1,
+    "AuthenticateOidcConfig": {
+      "Issuer": "https://accounts.google.com",
+      "AuthorizationEndpoint": "https://accounts.google.com/o/oauth2/v2/auth",
+      "TokenEndpoint": "https://oauth2.googleapis.com/token",
+      "UserInfoEndpoint": "https://openidconnect.googleapis.com/v1/userinfo",
+      "ClientId": "${GOOGLE_CLIENT_ID}",
+      "ClientSecret": "${GOOGLE_CLIENT_SECRET}",
+      "Scope": "openid email",
+      "SessionCookieName": "AWSELBAuthSessionCookie",
+      "SessionTimeout": 2592000,
+      "OnUnauthenticatedRequest": "authenticate"
+    }
+  },
+  {
+    "Type": "forward",
+    "Order": 2,
+    "TargetGroupArn": "${TG_ARN}"
+  }
+]
+EOF
+            aws elbv2 create-rule \
+              --listener-arn "$LISTENER_ARN" \
+              --priority 10 \
+              --conditions Field=path-pattern,Values='/ourwallboard*' \
+              --actions file:///tmp/oidc-actions.json
+            rm -f /tmp/oidc-actions.json
+          fi
+
+      # ── 8. Route 53 A record ────────────────────────────────────────────────
+      - name: Create Route 53 alias A record → ALB
+        run: |
+          ALB_DNS="${{ steps.alb.outputs.dns }}"
+          ALB_ZONE="${{ steps.alb.outputs.zone }}"
+
+          aws route53 change-resource-record-sets \
+            --hosted-zone-id "$HOSTED_ZONE_ID" \
+            --change-batch "{
+              \"Changes\": [{
+                \"Action\": \"UPSERT\",
+                \"ResourceRecordSet\": {
+                  \"Name\": \"${DOMAIN}\",
+                  \"Type\": \"A\",
+                  \"AliasTarget\": {
+                    \"HostedZoneId\": \"$ALB_ZONE\",
+                    \"DNSName\": \"$ALB_DNS\",
+                    \"EvaluateTargetHealth\": true
+                  }
+                }
+              }]
+            }"
+
+      # ── 9. Secrets Manager ──────────────────────────────────────────────────
+      - name: Store GCAL_SECRET_URL in Secrets Manager
+        run: |
+          aws secretsmanager describe-secret \
+            --secret-id wallboard/GCAL_SECRET_URL \
+            --region "$AWS_REGION" 2>/dev/null \
+          && aws secretsmanager put-secret-value \
+              --secret-id wallboard/GCAL_SECRET_URL \
+              --secret-string "${{ secrets.GCAL_SECRET_URL }}" \
+              --region "$AWS_REGION" \
+          || aws secretsmanager create-secret \
+              --name wallboard/GCAL_SECRET_URL \
+              --description "Google Calendar secret iCal URL for MagicMirror wallboard" \
+              --secret-string "${{ secrets.GCAL_SECRET_URL }}" \
+              --region "$AWS_REGION"
+
+      - name: Store Google OIDC client secret in Secrets Manager
+        run: |
+          aws secretsmanager describe-secret \
+            --secret-id wallboard/oidc-client-secret \
+            --region "$AWS_REGION" 2>/dev/null \
+          && aws secretsmanager put-secret-value \
+              --secret-id wallboard/oidc-client-secret \
+              --secret-string "${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}" \
+              --region "$AWS_REGION" \
+          || aws secretsmanager create-secret \
+              --name wallboard/oidc-client-secret \
+              --description "Google OAuth 2.0 client secret for ALB OIDC authentication" \
+              --secret-string "${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}" \
+              --region "$AWS_REGION"
+
+      # ── 10. Summary ─────────────────────────────────────────────────────────
+      - name: Print infrastructure summary
+        env:
+          ACCOUNT_ID: ${{ steps.account.outputs.id }}
+        run: |
+          {
+            echo "## Infrastructure Setup Complete"
+            echo ""
+            echo "| Resource | Value |"
+            echo "|---|---|"
+            echo "| ECR Repository | \`${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/magicmirror-wallboard\` |"
+            echo "| ECS Cluster | \`wallboard-cluster\` |"
+            echo "| ACM Certificate | \`${{ steps.acm.outputs.arn }}\` |"
+            echo "| ALB DNS | \`${{ steps.alb.outputs.dns }}\` |"
+            echo "| ALB SG | \`${{ steps.alb-sg.outputs.sg_id }}\` |"
+            echo "| ECS SG | \`${{ steps.ecs-sg.outputs.sg_id }}\` |"
+            echo "| Target Group | \`${{ steps.tg.outputs.arn }}\` |"
+            echo "| OIDC Client ID | \`${GOOGLE_CLIENT_ID}\` |"
+            echo "| Allowed email | \`${GOOGLE_ALLOWED_EMAIL}\` |"
+            echo ""
+            echo "### :clipboard: Next steps"
+            echo ""
+            echo "1. Update \`infrastructure/task-definition.json\`:"
+            echo "   - Replace \`<ACCOUNT_ID>\` with \`${ACCOUNT_ID}\`"
+            echo "   - Replace \`<REGION>\` with \`${AWS_REGION}\`"
+            echo "   - Set ECS task security group: \`${{ steps.ecs-sg.outputs.sg_id }}\`"
+            echo "   - Set subnets: \`${{ inputs.subnet_ids }}\`"
+            echo ""
+            echo "2. Set these repository variables in GitHub (Settings → Secrets and variables → Actions):"
+            echo "   | Variable | Value |"
+            echo "   |---|---|"
+            echo "   | \`ECS_SUBNET_IDS\` | \`${{ inputs.subnet_ids }}\` |"
+            echo "   | \`ECS_SECURITY_GROUP_ID\` | \`${{ steps.ecs-sg.outputs.sg_id }}\` |"
+            echo "   | \`ECS_TARGET_GROUP_ARN\` | \`${{ steps.tg.outputs.arn }}\` |"
+            echo ""
+            echo "3. Push to \`master\` to trigger the deploy workflow (first deploy creates the ECS service)"
+            echo ""
+            echo "4. :lock: Google OIDC auth is already configured on the ALB listener rule."
+            echo "   The ALB will redirect unauthenticated requests to Google login (\`${GOOGLE_ALLOWED_EMAIL}\`)."
+            echo "   Session cookie expires after **30 days** — TV/tablet will re-prompt once a month."
+          } >> "$GITHUB_STEP_SUMMARY"

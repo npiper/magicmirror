@@ -108,45 +108,374 @@ MagicMirror is configured via `mounts/config/config.js`. Key sections for the wa
 ```js
 {
     module: "calendar",
-    header: "Schedule",
+    header: "Family Schedule",
     position: "top_left",
     config: {
         calendars: [
             {
-                symbol: "calendar",
-                url: "https://calendar.google.com/calendar/ical/<your-id>/basic.ics"
+                symbol: "calendar-alt",
+                color: "#5B89C8",
+                url: "https://calendar.google.com/calendar/ical/<calendar-id>/private-<secret-token>/basic.ics"
             }
         ]
     }
 }
 ```
 
-Google Calendar public ICal URL (or any ICal-compatible feed) works here.
+**Important — use the Secret address, not the Public address.**
+
+Google Calendar exposes two iCal URLs in calendar Settings:
+
+| URL type | Path segment | Works for private calendars? |
+|---|---|---|
+| Public address | `/public/basic.ics` | **No** — returns empty unless calendar is set to "Make available to public" |
+| **Secret address** | `/private-<token>/basic.ics` | **Yes** — use this one |
+
+To find the Secret address: Google Calendar → calendar ⋮ menu → **Settings** → scroll to **"Secret address in iCal format"**.
+
+**Security:** The secret iCal URL is a capability URL — anyone with it can read the calendar. Do **not** hardcode it in files committed to GitHub. Pass it via environment variable instead:
+
+```js
+url: process.env.GCAL_SECRET_URL
+```
+
+### Secret management
+
+| Context | Where to store `GCAL_SECRET_URL` |
+|---|---|
+| **GitHub Actions** | Repository secret: `Settings → Secrets and variables → Actions → New repository secret` → name: `GCAL_SECRET_URL` |
+| **Local development/testing** | Add to `~/.profile` (or `~/.zshrc`): `export GCAL_SECRET_URL="https://..."` |
+| **Runtime (Docker)** | Injected automatically — see below |
+
+**Already gitignored** (no action needed):
+- `mounts/` — contains `config/config.js`
+- `run/.env` — Docker Compose environment file
+
+### Injecting the secret at runtime
+
+In `run/.env`, reference the environment variable (shell substitution at compose startup):
+
+```
+GCAL_SECRET_URL=${GCAL_SECRET_URL}
+```
+
+Then expose it to the container in `run/includes/base.yaml` under the service `environment` block:
+
+```yaml
+environment:
+  - GCAL_SECRET_URL
+```
+
+For a GitHub Actions deployment workflow, inject it from the repository secret:
+
+```yaml
+- name: Deploy
+  env:
+    GCAL_SECRET_URL: ${{ secrets.GCAL_SECRET_URL }}
+  run: docker compose -f run/compose.yaml up -d
+```
 
 ### Emoji/icon mapping
 
-With `MMM-CalendarExt3` you can map event title keywords to emojis in config:
+Keywords in the event title in Google Calendar are matched and the corresponding emoji shown. Defined in `mounts/config/config.js` under `customEvents`:
 
 ```js
-symbolClass: {
-    "School":    "🏫",
-    "Football":  "⚽",
-    "Dinner":    "🍽️",
-    "Bedtime":   "🌙",
-    "Swimming":  "🏊",
+customEvents: [
+    { keyword: "School",        symbol: "🏫" },
+    { keyword: "Football",      symbol: "⚽" },
+    { keyword: "Swimming",      symbol: "🏊" },
+    { keyword: "Dinner",        symbol: "🍽️" },
+    { keyword: "Bedtime",       symbol: "🌙" },
+    { keyword: "Park",          symbol: "🌳" },
+    { keyword: "Sewing",        symbol: "🧵" },
+    { keyword: "Homework",      symbol: "📚" },
+    { keyword: "Dentist",       symbol: "🦷" },
+    { keyword: "Orthodontist",  symbol: "🦷" },
+    { keyword: "Doctor",        symbol: "🩺" },
+    { keyword: "Dr",            symbol: "🩺" },
+    { keyword: "Breakfast",     symbol: "🥣" },
+    { keyword: "Exercise",      symbol: "🏃" },
+    { keyword: "Playdate",      symbol: "🎮" }
+]
+```
+
+When migrating to `MMM-CalendarExt3` the same keywords transfer to its `symbolClass` mapping.
+
+---
+
+## AWS Cloud Deployment
+
+For a permanently accessible hosted version at `https://yourname.me/ourwallboard`, the wallboard can be deployed to **AWS ECS Fargate** with HTTPS via an Application Load Balancer.
+
+### Architecture
+
+```
+Browser → Route 53 (yourname.me) → ALB (HTTPS :443, ACM cert)
+                                      └─ Listener rule: /ourwallboard*
+                                           └─ Target Group → ECS Fargate task
+                                                              (magicmirror-wallboard:8080)
+```
+
+![AWS Architecture](infrastructure/aws-architecture.svg)
+
+| Component | AWS Service | Notes |
+|---|---|---|
+| Container registry | ECR | `magicmirror-wallboard` repository |
+| Container runtime | ECS Fargate | `wallboard-cluster` / `magicmirror-wallboard` service |
+| HTTPS / routing | ALB | Path rule `/ourwallboard*` → target group |
+| TLS certificate | ACM | Cert for `yourname.me` (or `*.yourname.me`) |
+| DNS | Route 53 | A alias record → ALB DNS name |
+| Runtime secret | Secrets Manager | `wallboard/GCAL_SECRET_URL` |
+| Logs | CloudWatch Logs | Log group `/ecs/magicmirror-wallboard` |
+
+### Pre-requisites (one-time manual setup)
+
+1. **VPC** — default VPC with public subnets is sufficient for a personal project
+2. **ECR repository**
+   ```bash
+   aws ecr create-repository --repository-name magicmirror-wallboard --region <REGION>
+   ```
+3. **ECS Cluster**
+   ```bash
+   aws ecs create-cluster --cluster-name wallboard-cluster
+   ```
+4. **ACM certificate** — request in the AWS Console for `yourname.me` (DNS validation via Route 53)
+5. **Application Load Balancer** — create via Console or CLI:
+   - HTTPS listener on port 443 using the ACM cert
+   - Listener rule: path `/ourwallboard*` → forward to target group
+   - Target group: IP mode, port 8080, health check path `/ourwallboard/`
+6. **Route 53 A record** — alias pointing `yourname.me` (or a subdomain) → ALB DNS name
+7. **AWS Secrets Manager secret**
+   ```bash
+   aws secretsmanager create-secret \
+     --name wallboard/GCAL_SECRET_URL \
+     --secret-string "<your-gcal-secret-ical-url>"
+   ```
+8. **Security Group** — allow inbound 8080 from the ALB security group only; ALB allows 443 from `0.0.0.0/0`
+9. **CloudWatch Log group**
+   ```bash
+   aws logs create-log-group --log-group-name /ecs/magicmirror-wallboard
+   ```
+10. **ECS Task Execution Role** (`ecsTaskExecutionRole`) — attach managed policy `AmazonECSTaskExecutionRolePolicy` plus the custom policy below
+11. **ECS Task Role** (`ecsTaskRole`) — can be a minimal role with no policies unless additional AWS services are needed
+
+### IAM Permissions
+
+#### GitHub Actions deploy user (minimum)
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ECRPush",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
+        "ecr:PutImage"
+      ],
+      "Resource": "arn:aws:ecr:<REGION>:<ACCOUNT_ID>:repository/magicmirror-wallboard"
+    },
+    {
+      "Sid": "ECRAuth",
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECSDeployTasks",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:RegisterTaskDefinition",
+        "ecs:DescribeTaskDefinition",
+        "ecs:UpdateService",
+        "ecs:DescribeServices"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "PassExecutionRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": [
+        "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
+        "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskRole"
+      ]
+    }
+  ]
 }
 ```
+
+#### ECS Task Execution Role — extra policy for Secrets Manager
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadWallboardSecrets",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wallboard/*"
+    }
+  ]
+}
+```
+
+### Pre-requisite for Deployment / Github Configuration
+
+Before running the setup workflow and setting the Env variables in Github Actions you need to, create the OAuth 2.0 credentials in `Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID (Web application)`, with redirect URI https://yourname.me/oauth2/idpresponse, then add the Client ID/Secret as the repository variable/secre
+
+
+### GitHub Actions / Repository secrets required
+
+| Secret / Variable | Where to set | Value |
+|---|---|---|
+| `AWS_ACCESS_KEY_ID` | Repository secret | IAM deploy user access key |
+| `AWS_SECRET_ACCESS_KEY` | Repository secret | IAM deploy user secret key |
+| `GCAL_SECRET_URL` | Repository secret | Google Calendar secret iCal URL (also used locally) |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Repository secret | Google OAuth 2.0 client secret (from Google Cloud Console) |
+| `AWS_REGION` | Repository **variable** | e.g. `eu-west-1` |
+| `GOOGLE_OAUTH_CLIENT_ID` | Repository **variable** | Google OAuth 2.0 client ID (from Google Cloud Console) |
+| `GOOGLE_ALLOWED_EMAIL` | Repository **variable** | `yourname@gmail.com` — documented allowed identity |
+| `ECS_SUBNET_IDS` | Repository **variable** | Comma-separated subnet IDs — output by setup workflow |
+| `ECS_SECURITY_GROUP_ID` | Repository **variable** | ECS security group ID (`wallboard-ecs-sg`) — output by setup workflow |
+| `ECS_TARGET_GROUP_ARN` | Repository **variable** | Target group ARN — output by setup workflow |
+
+
+### Deployment files
+
+```
+infrastructure/
+  Dockerfile            # Custom image: karsten13/magicmirror + config + MMM-CalendarExt3
+  config.js             # AWS-specific config (basePath: /ourwallboard/), no secrets
+  custom.css            # CSS overrides baked into the image
+  task-definition.json  # ECS task definition template (replace <ACCOUNT_ID>/<REGION>)
+.github/
+  workflows/
+    setup-aws-infrastructure.yml  # One-time setup: ECR, ECS cluster, ALB, ACM, Route 53, IAM, SGs
+    deploy-aws.yml                # CI/CD: build → push ECR → deploy ECS on push to master
+```
+
+The setup workflow is triggered manually via `workflow_dispatch` and is idempotent — safe to re-run.
+It requires `vpc_id`, `subnet_ids` (min 2 AZs), `hosted_zone_id`, and optionally `domain` as inputs.
+At the end it prints the resource IDs and ARNs needed for the repository variables above.
+
+The deploy workflow triggers on any push to `master` that touches `infrastructure/`. It can also be triggered manually via `workflow_dispatch`.
+
+### task-definition.json placeholders to replace
+
+Before first deploy, update `infrastructure/task-definition.json`:
+- `<ACCOUNT_ID>` → your 12-digit AWS account ID
+- `<REGION>` → your AWS region (e.g. `eu-west-1`)
+
+---
+
+## Secure Architecture — Google OIDC via ALB
+
+Because `https://yourname.me/ourwallboard` is publicly reachable and displays a private family calendar, access should be restricted to a known Google identity before the page is served.
+
+### Chosen approach: ALB built-in OIDC authentication
+
+AWS Application Load Balancer supports an `authenticate-oidc` listener rule action natively — no code changes to MagicMirror are needed. The ALB handles the entire OAuth 2.0 / OIDC flow and only forwards requests to ECS once the user is authenticated. A signed session cookie (`AWSELBAuthSessionCookie`) is set in the browser with a **30-day expiry**, so a TV or tablet only needs to authenticate once a month.
+
+**Auth flow:**
+
+```
+Browser → ALB → (no valid session cookie?)
+              → 302 redirect to accounts.google.com/o/oauth2/auth
+              → User logs in as yourname@gmail.com
+              → Google redirects back to ALB /oauth2/idpresponse
+              → ALB exchanges code for ID token, validates email claim
+              → Sets AWSELBAuthSessionCookie (30 days)
+              → Forwards request to ECS Fargate (MagicMirror)
+```
+
+![Secure AWS Architecture](infrastructure/aws-architecture-secure.svg)
+
+### What changes vs. the basic architecture
+
+| | Basic | Secure (OIDC) |
+|---|---|---|
+| ALB listener action | Forward → Target Group | **authenticate-oidc** → Forward → Target Group |
+| Google OAuth app | Not needed | Required (Google Cloud Console) |
+| Extra secret | — | `wallboard/oidc-client-secret` in Secrets Manager |
+| Session re-auth | Never (open) | Every **30 days** |
+| `email` claim check | — | Whitelist `yourname@gmail.com` via `AuthenticateOidcConfig.AuthenticationRequestExtraParams` or post-auth condition |
+
+### One-time setup: Google OAuth 2.0 credentials
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services → Credentials**
+2. **Create credentials → OAuth 2.0 Client ID** → Application type: **Web application**
+3. Name: `wallboard-alb`
+4. **Authorised redirect URIs** — add:
+   ```
+   https://yourname.me/oauth2/idpresponse
+   ```
+5. Note the **Client ID** and **Client Secret**
+6. Store the client secret in AWS Secrets Manager:
+   ```bash
+   aws secretsmanager create-secret \
+     --name wallboard/oidc-client-secret \
+     --secret-string "<your-google-client-secret>"
+   ```
+
+### ALB listener rule — authenticate-oidc action (AWS Console / CLI)
+
+When creating or editing the HTTPS listener rule for `/ourwallboard*`, set the **first action** to `authenticate-oidc` with these values:
+
+| Field | Value |
+|---|---|
+| Issuer | `https://accounts.google.com` |
+| Authorization endpoint | `https://accounts.google.com/o/oauth2/v2/auth` |
+| Token endpoint | `https://oauth2.googleapis.com/token` |
+| User info endpoint | `https://openidconnect.googleapis.com/v1/userinfo` |
+| Client ID | *(from Google Cloud Console)* |
+| Client secret | *(ARN of `wallboard/oidc-client-secret` in Secrets Manager)* |
+| Scope | `openid email` |
+| Session timeout | `2592000` *(30 days in seconds)* |
+| On unauthenticated request | `authenticate` *(redirect to Google login)* |
+
+The **second action** remains: Forward → wallboard target group.
+
+### Restricting to a single Google account
+
+The ALB `authenticate-oidc` action verifies the token is valid but does **not** natively filter by email. To enforce `yourname@gmail.com` only, add a fixed-response rule that fires before the auth rule:
+
+- Add a listener rule with **higher priority** that matches `X-Amzn-Oidc-Data` claims or use a Lambda authorizer. The simplest approach for a personal project is to rely on the fact that only you know the URL **and** the Google login prompt will only show your signed-in accounts — effectively two-factor (URL knowledge + Google account).
+
+For stricter enforcement without Lambda, use **Google OAuth consent screen** → set the app to **Internal** if your account is a Google Workspace account, which restricts logins to your domain only.
+
+### Additional pre-requisite for secure deployment
+
+Add to the [Pre-requisites](#pre-requisites-one-time-manual-setup) list:
+
+12. **Google OAuth credentials** — create Web application credentials in Google Cloud Console; add `https://yourname.me/oauth2/idpresponse` as an authorised redirect URI
+13. **Store OIDC client secret** in Secrets Manager as `wallboard/oidc-client-secret`
+14. **Update ALB listener rule** — change action from `Forward` to `authenticate-oidc → Forward` with `sessionTimeout: 2592000`
+15. **Grant ECS Task Execution Role** read access to `wallboard/oidc-client-secret` (already covered by the `wallboard/*` Secrets Manager policy above)
 
 ---
 
 ## To Do / Next Steps
 
-- [ ] Update Docker Desktop to 4.22.0+ and verify `docker compose up -d` runs cleanly from `run/`
-- [ ] Populate `mounts/config/config.js` with calendar source(s)
-- [ ] Install and configure `MMM-CalendarExt3` for the large visual daily view
-- [ ] Define emoji/icon keyword mappings for the child's regular activities
-- [ ] Mount the tablet on the wall and set the browser to kiosk / always-on mode
-- [ ] Test: confirm the timetable updates automatically when calendar events change
+- [x] Update Docker Desktop to 4.22.0+
+- [x] Enable MMPM (`MM_MMPM="mmpm"` in `run/.env`)
+- [x] Wire `GCAL_SECRET_URL` through compose into container
+- [ ] Start stack locally: `cd run && docker compose up -d`
+- [ ] Use MMPM at `http://localhost:7890` to install `MMM-CalendarExt3`
+- [ ] Verify wallboard at `http://localhost:8080` shows calendar events
+- [ ] Set `MM_INIT="no"` in `run/.env` after first successful start
+- [ ] Mount the tablet on the wall; set browser to kiosk / always-on mode
+- [ ] **AWS pre-requisites**: ECR repo, ECS cluster, ALB, ACM cert, Route 53 record, Secrets Manager secret
+- [ ] Replace `<ACCOUNT_ID>` and `<REGION>` in `infrastructure/task-definition.json`
+- [ ] Add `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` to GitHub repo secrets/variables
+- [ ] Push to `master` to trigger first AWS deploy
+- [ ] Verify `https://yourname.me/ourwallboard` is reachable
 
 ---
 

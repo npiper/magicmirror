@@ -1,0 +1,61 @@
+@startuml aws-architecture-secure
+title Wallboard — Secure Architecture (Google OIDC via ALB)
+
+' AWS stdlib
+!include <awslib/AWSCommon>
+!include <awslib/NetworkingContentDelivery/Route53>
+!include <awslib/NetworkingContentDelivery/ElasticLoadBalancing>
+!include <awslib/Containers/ElasticContainerService>
+!include <awslib/Containers/ElasticContainerRegistry>
+!include <awslib/SecurityIdentityCompliance/SecretsManager>
+!include <awslib/SecurityIdentityCompliance/CertificateManager>
+!include <awslib/ManagementGovernance/CloudWatch>
+
+LAYOUT_LEFT_RIGHT
+
+skinparam defaultTextAlignment center
+skinparam linetype ortho
+hide stereotype
+
+' ── External actors ────────────────────────────────────────────────────────────
+actor "Browser / TV" as browser
+
+node "Google OAuth 2.0\naccounts.google.com\nyourname@gmail.com" as google #LightSkyBlue
+
+node "GitHub Actions\nCI/CD Pipeline" as gha {
+}
+
+' ── AWS resources ──────────────────────────────────────────────────────────────
+Route53(dns, "Route 53\nyourname.me", "DNS A alias → ALB")
+
+CertificateManager(acm, "ACM\n*.yourname.me", "TLS certificate")
+
+ElasticLoadBalancing(alb, "Application Load Balancer\nHTTPS :443\nauthenticate-oidc action\npath: /ourwallboard*", "Session cookie: 30-day expiry")
+
+ElasticContainerRegistry(ecr, "ECR\nmagicmirror-wallboard", "Container image registry")
+
+ElasticContainerService(ecs, "ECS Fargate\nwallboard-cluster\nmagicmirror-wallboard:8080", "Task: 256 CPU / 512 MB")
+
+SecretsManager(secrets, "Secrets Manager\nwallboard/oidc-client-secret\nwallboard/GCAL_FAMILY_SECRET_URL\nwallboard/GCAL_SCHOOL_SECRET_URL", "Runtime secrets\n(Family + School calendars)")
+
+CloudWatch(logs, "CloudWatch Logs\n/ecs/magicmirror-wallboard", "Container stdout/stderr")
+
+' ── Relationships ──────────────────────────────────────────────────────────────
+browser  --> dns      : 1. HTTPS GET\nyourname.me/ourwallboard
+dns      --> alb      : A alias record
+acm      --> alb      : TLS certificate
+alb     <--> google   : 2–6. OIDC auth flow\n(redirect → login → token exchange)
+alb      --> browser  : 7. AWSELBAuthSessionCookie\n(30-day expiry)
+alb      --> ecs      : 8. Forward (authenticated only)
+ecs      --> secrets  : Read secrets at startup
+note right of secrets
+  Family calendar iCal URL
+  School calendar iCal URL
+  Both fetched & merged by
+  MagicMirror calendar module
+end note
+ecs      --> logs     : Log output
+gha      --> ecr      : docker build & push
+gha      --> ecs      : register task def\n& update service
+ecr      --> ecs      : Pull image on deploy
+@enduml

@@ -1,0 +1,43 @@
+{
+    "family": "magicmirror-wallboard",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "256",
+    "memory": "512",
+    "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskRole",
+    "containerDefinitions": [
+        {
+            "name": "magicmirror-wallboard",
+            "image": "<ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/magicmirror-wallboard:latest",
+            "essential": true,
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "protocol": "tcp"
+                }
+            ],
+            "secrets": [
+                {
+                    "name": "GCAL_SECRET_URL",
+                    "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wallboard/GCAL_SECRET_URL"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/magicmirror-wallboard",
+                    "awslogs-region": "<REGION>",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            },
+            "healthCheck": {
+                "command": ["CMD-SHELL", "curl -f http://localhost:8080/ourwallboard/ || exit 1"],
+                "interval": 30,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 60
+            }
+        }
+    ]
+}

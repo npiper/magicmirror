@@ -10,6 +10,8 @@ x-master: &master
     - MM_SCENARIO
     - MM_MODULES_DIR
     - MM_CUSTOMCSS_FILE
+    - GCAL_SECRET_URL
+    - GCAL_NP_SECRET_URL
   post_start:
     - command:
         - /bin/sh
