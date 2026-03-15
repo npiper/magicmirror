@@ -66,6 +66,15 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+      - name: Substitute placeholders in task definition
+        id: sub-task-def
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          sed -i \
+            -e "s|<ACCOUNT_ID>|${ACCOUNT_ID}|g" \
+            -e "s|<REGION>|${AWS_REGION}|g" \
+            infrastructure/task-definition.json
+
       - name: Fill in the new image ID in the ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1

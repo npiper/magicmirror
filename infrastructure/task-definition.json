@@ -21,6 +21,14 @@
                 {
                     "name": "GCAL_SECRET_URL",
                     "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wallboard/GCAL_SECRET_URL"
+                },
+                {
+                    "name": "GCAL_NP_SECRET_URL",
+                    "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wallboard/GCAL_NP_SECRET_URL"
+                },
+                {
+                    "name": "OPENWEATHER_API_KEY",
+                    "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wallboard/OPENWEATHER_API_KEY"
                 }
             ],
             "logConfiguration": {
