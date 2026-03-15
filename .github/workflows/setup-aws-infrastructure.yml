@@ -495,7 +495,7 @@ jobs:
                     "ClientSecret": $client_secret,
                     "Scope": "openid email",
                     "SessionCookieName": "AWSELBAuthSessionCookie",
-                    "SessionTimeout": 2592000,
+                    "SessionTimeout": 604800,
                     "OnUnauthenticatedRequest": "authenticate"
                   }
                 },
