@@ -411,20 +411,24 @@ Browser → ALB → (no valid session cookie?)
 
 ### One-time setup: Google OAuth 2.0 credentials
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services → Credentials**
-2. **Create credentials → OAuth 2.0 Client ID** → Application type: **Web application**
-3. Name: `wallboard-alb`
-4. **Authorised redirect URIs** — add:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services → OAuth consent screen**
+2. User type: **External** → **Create**
+3. Fill in app name (`wallboard-alb`), support email, developer email → **Save and Continue** through Scopes
+4. Under **Test users** → **Add users** — add all 3 Gmail addresses (yours, wife's, daughter's)
+5. Leave the app in **Testing** status — **do not publish**. Only the listed test users can log in. Google does not require app verification for testing mode.
+6. Go to **APIs & Services → Credentials** → **Create credentials → OAuth 2.0 Client ID**
+7. Application type: **Web application**, name: `wallboard-alb`
+8. **Authorised redirect URIs** — add:
    ```
    https://yourname.me/oauth2/idpresponse
    ```
-5. Note the **Client ID** and **Client Secret**
-6. Store the client secret in AWS Secrets Manager:
-   ```bash
-   aws secretsmanager create-secret \
-     --name wallboard/oidc-client-secret \
-     --secret-string "<your-google-client-secret>"
-   ```
+9. Click **Create** — note the **Client ID** and **Client Secret**
+10. Store the client secret in AWS Secrets Manager:
+    ```bash
+    aws secretsmanager create-secret \
+      --name wallboard/oidc-client-secret \
+      --secret-string "<your-google-client-secret>"
+    ```
 
 ### ALB listener rule — authenticate-oidc action (AWS Console / CLI)
 
@@ -444,13 +448,15 @@ When creating or editing the HTTPS listener rule for `/ourwallboard*`, set the *
 
 The **second action** remains: Forward → wallboard target group.
 
-### Restricting to a single Google account
+### Restricting to specific Google accounts (up to 100)
 
-The ALB `authenticate-oidc` action verifies the token is valid but does **not** natively filter by email. To enforce `yourname@gmail.com` only, add a fixed-response rule that fires before the auth rule:
+The ALB `authenticate-oidc` action verifies the Google token is valid but does **not** natively filter by email. The cleanest way to restrict access to specific consumer Gmail accounts (no Google Workspace needed) is the **OAuth Testing mode** approach:
 
-- Add a listener rule with **higher priority** that matches `X-Amzn-Oidc-Data` claims or use a Lambda authorizer. The simplest approach for a personal project is to rely on the fact that only you know the URL **and** the Google login prompt will only show your signed-in accounts — effectively two-factor (URL knowledge + Google account).
-
-For stricter enforcement without Lambda, use **Google OAuth consent screen** → set the app to **Internal** if your account is a Google Workspace account, which restricts logins to your domain only.
+- Keep the Google OAuth app in **Testing** status (never publish it)
+- In Google Cloud Console → **OAuth consent screen → Test users**, add each allowed Gmail address
+- Google will **only allow those exact email addresses** to complete the OIDC flow — anyone else sees an error page at Google, before they even reach your ALB
+- You can add up to **100 test users** — plenty for a family wallboard
+- The app stays in testing mode indefinitely with no expiry or verification needed
 
 ### Additional pre-requisite for secure deployment
 

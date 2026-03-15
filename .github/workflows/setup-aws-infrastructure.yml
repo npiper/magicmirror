@@ -12,7 +12,9 @@ name: Setup AWS Infrastructure (One-time)
 #
 # Required PROD environment VARIABLES (Settings → Environments → PROD → Variables):
 #   GOOGLE_OAUTH_CLIENT_ID     — Google OAuth 2.0 client ID (from Google Cloud Console)
-#   GOOGLE_ALLOWED_EMAIL       — Google account to allow (e.g. yourname@gmail.com)
+#   GOOGLE_ALLOWED_EMAIL       — Primary Google account email (shown in summary; access is
+#                                controlled via OAuth consent screen Test users — add all
+#                                allowed Gmail addresses there, up to 100)
 #
 # These values are only available to jobs that reference 'environment: PROD'
 # and have passed the required deployment protection / approval gate.
@@ -499,7 +501,7 @@ EOF
             echo "| ECS SG | \`${{ steps.ecs-sg.outputs.sg_id }}\` |"
             echo "| Target Group | \`${{ steps.tg.outputs.arn }}\` |"
             echo "| OIDC Client ID | \`${GOOGLE_CLIENT_ID}\` |"
-            echo "| Allowed email | \`${GOOGLE_ALLOWED_EMAIL}\` |"
+            echo "| Allowed email | \`${GOOGLE_ALLOWED_EMAIL}\` (+ any test users added in Google Cloud Console OAuth consent screen) |"
             echo ""
             echo "### :clipboard: Next steps"
             echo ""
@@ -519,6 +521,7 @@ EOF
             echo "3. Push to \`master\` to trigger the deploy workflow (first deploy creates the ECS service)"
             echo ""
             echo "4. :lock: Google OIDC auth is already configured on the ALB listener rule."
-            echo "   The ALB will redirect unauthenticated requests to Google login (\`${GOOGLE_ALLOWED_EMAIL}\`)."
+            echo "   The ALB redirects unauthenticated requests to Google login."
+            echo "   Access is restricted to test users listed in Google Cloud Console → OAuth consent screen."
             echo "   Session cookie expires after **30 days** — TV/tablet will re-prompt once a month."
           } >> "$GITHUB_STEP_SUMMARY"
