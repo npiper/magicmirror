@@ -53,6 +53,7 @@ jobs:
   setup:
     name: Provision Base Infrastructure
     runs-on: ubuntu-latest
+    environment: PROD
     env:
       AWS_REGION:           ${{ inputs.region }}
       DOMAIN:               ${{ inputs.domain }}
