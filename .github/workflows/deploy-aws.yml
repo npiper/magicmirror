@@ -2,10 +2,10 @@ name: Deploy Wallboard to AWS ECS
 
 # Required PROD environment SECRETS (Settings → Environments → PROD → Secrets):
 #   AWS_ACCESS_KEY_ID          — IAM deploy user access key
-#   AWS_SECRET_ACCESS_KEY      — IAM deploy user secret key
+#   AWS_SECRET_KEY             — IAM deploy user secret key
 #
 # Required PROD environment VARIABLES (Settings → Environments → PROD → Variables):
-#   AWS_REGION                 — e.g. eu-west-2
+#   AWS_DEFAULT_REGION         — e.g. eu-west-2
 #   ECS_SUBNET_IDS             — comma-separated subnet IDs for the ECS task
 #   ECS_SECURITY_GROUP_ID      — security group ID for the ECS task
 #   ECS_TARGET_GROUP_ARN       — ARN of the ALB target group
@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION:        ${{ vars.AWS_REGION }}
+  AWS_REGION:        ${{ vars.AWS_DEFAULT_REGION }}
   ECR_REPOSITORY:    magicmirror-wallboard
   ECS_CLUSTER:       wallboard-cluster
   ECS_SERVICE:       magicmirror-wallboard
@@ -44,7 +44,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR

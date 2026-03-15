@@ -331,20 +331,22 @@ Browser → Route 53 (yourname.me) → ALB (HTTPS :443, ACM cert)
 Before running the setup workflow and setting the Env variables in Github Actions you need to, create the OAuth 2.0 credentials in `Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID (Web application)`, with redirect URI https://yourname.me/oauth2/idpresponse, then add the Client ID/Secret as the repository variable/secre
 
 
-### GitHub Actions / Repository secrets required
+### GitHub Actions / PROD environment secrets required
 
 | Secret / Variable | Where to set | Value |
 |---|---|---|
-| `AWS_ACCESS_KEY_ID` | Repository secret | IAM deploy user access key |
-| `AWS_SECRET_ACCESS_KEY` | Repository secret | IAM deploy user secret key |
-| `GCAL_SECRET_URL` | Repository secret | Google Calendar secret iCal URL (also used locally) |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | Repository secret | Google OAuth 2.0 client secret (from Google Cloud Console) |
-| `AWS_REGION` | Repository **variable** | e.g. `eu-west-1` |
-| `GOOGLE_OAUTH_CLIENT_ID` | Repository **variable** | Google OAuth 2.0 client ID (from Google Cloud Console) |
-| `GOOGLE_ALLOWED_EMAIL` | Repository **variable** | `yourname@gmail.com` — documented allowed identity |
-| `ECS_SUBNET_IDS` | Repository **variable** | Comma-separated subnet IDs — output by setup workflow |
-| `ECS_SECURITY_GROUP_ID` | Repository **variable** | ECS security group ID (`wallboard-ecs-sg`) — output by setup workflow |
-| `ECS_TARGET_GROUP_ARN` | Repository **variable** | Target group ARN — output by setup workflow |
+| `AWS_ACCESS_KEY_ID` | PROD environment secret | IAM deploy user access key |
+| `AWS_SECRET_KEY` | PROD environment secret | IAM deploy user secret key |
+| `GCAL_SECRET_URL` | PROD environment secret | Primary Google Calendar secret iCal URL |
+| `GCAL_NP_SECRET_URL` | PROD environment secret | Secondary Google Calendar secret iCal URL |
+| `OPENWEATHER_API_KEY` | PROD environment secret | OpenWeatherMap API key — get one free at [openweathermap.org/api](https://openweathermap.org/api) |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | PROD environment secret | Google OAuth 2.0 client secret (from Google Cloud Console) |
+| `AWS_DEFAULT_REGION` | PROD environment **variable** | e.g. `eu-west-1` |
+| `GOOGLE_OAUTH_CLIENT_ID` | PROD environment **variable** | Google OAuth 2.0 client ID (from Google Cloud Console) |
+| `GOOGLE_ALLOWED_EMAIL` | PROD environment **variable** | `yourname@gmail.com` — documented allowed identity |
+| `ECS_SUBNET_IDS` | PROD environment **variable** | Comma-separated subnet IDs — output by setup workflow |
+| `ECS_SECURITY_GROUP_ID` | PROD environment **variable** | ECS security group ID (`wallboard-ecs-sg`) — output by setup workflow |
+| `ECS_TARGET_GROUP_ARN` | PROD environment **variable** | Target group ARN — output by setup workflow |
 
 
 ### Deployment files

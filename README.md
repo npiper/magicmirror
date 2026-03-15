@@ -7,6 +7,7 @@ See [WALLBOARD.md](WALLBOARD.md) for a full description of the modules and featu
 
 - **Docker Desktop 4.22.0+** (Docker Compose v2 with `include:` support)
 - Two **Google Calendar secret iCal URLs** (one per calendar you want to display)
+- An **OpenWeatherMap API key** — free tier at [openweathermap.org/api](https://openweathermap.org/api) (Current Weather + 5 Day Forecast, no credit card required)
 
 ## Local Setup
 
@@ -27,6 +28,9 @@ Create the file `run/.env` (it is gitignored — your secrets will not be commit
 GCAL_SECRET_URL=https://calendar.google.com/calendar/ical/.../basic.ics
 GCAL_NP_SECRET_URL=https://calendar.google.com/calendar/ical/.../basic.ics
 
+# Mandatory — OpenWeatherMap API key for weather module
+OPENWEATHER_API_KEY=your_api_key_here
+
 # Optional — defaults shown below
 MM_SCENARIO=server
 MM_INIT=init
@@ -39,6 +43,7 @@ MM_WATCHTOWER=
 |---|---|---|
 | `GCAL_SECRET_URL` | ✅ | Primary calendar iCal feed (e.g. family) |
 | `GCAL_NP_SECRET_URL` | ✅ | Secondary calendar iCal feed (e.g. personal) |
+| `OPENWEATHER_API_KEY` | ✅ | OpenWeatherMap API key for current weather + forecast |
 | `MM_SCENARIO` | No | MagicMirror scenario (default: `server`) |
 | `MM_INIT` | No | Initialisation mode (default: `init`) |
 | `MM_SERVER_PORTS` | No | Host:container port mapping (default: `80:8080`) |

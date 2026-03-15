@@ -4,9 +4,10 @@ name: Setup AWS Infrastructure (One-time)
 #
 # Required PROD environment SECRETS (Settings → Environments → PROD → Secrets):
 #   AWS_ACCESS_KEY_ID          — IAM deploy user access key
-#   AWS_SECRET_ACCESS_KEY      — IAM deploy user secret key
+#   AWS_SECRET_KEY             — IAM deploy user secret key
 #   GCAL_SECRET_URL            — Google Calendar secret iCal URL
 #   GOOGLE_OAUTH_CLIENT_SECRET — Google OAuth 2.0 client secret (from Google Cloud Console)
+#   OPENWEATHER_API_KEY        — OpenWeatherMap API key for current/forecast weather
 #
 # Required PROD environment VARIABLES (Settings → Environments → PROD → Variables):
 #   GOOGLE_OAUTH_CLIENT_ID     — Google OAuth 2.0 client ID (from Google Cloud Console)
@@ -70,7 +71,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region:            ${{ inputs.region }}
 
       - name: Get AWS account ID
@@ -432,6 +433,21 @@ EOF
               --name wallboard/GCAL_SECRET_URL \
               --description "Google Calendar secret iCal URL for MagicMirror wallboard" \
               --secret-string "${{ secrets.GCAL_SECRET_URL }}" \
+              --region "$AWS_REGION"
+
+      - name: Store OPENWEATHER_API_KEY in Secrets Manager
+        run: |
+          aws secretsmanager describe-secret \
+            --secret-id wallboard/OPENWEATHER_API_KEY \
+            --region "$AWS_REGION" 2>/dev/null \
+          && aws secretsmanager put-secret-value \
+              --secret-id wallboard/OPENWEATHER_API_KEY \
+              --secret-string "${{ secrets.OPENWEATHER_API_KEY }}" \
+              --region "$AWS_REGION" \
+          || aws secretsmanager create-secret \
+              --name wallboard/OPENWEATHER_API_KEY \
+              --description "OpenWeatherMap API key for MagicMirror weather module" \
+              --secret-string "${{ secrets.OPENWEATHER_API_KEY }}" \
               --region "$AWS_REGION"
 
       - name: Store Google OIDC client secret in Secrets Manager
