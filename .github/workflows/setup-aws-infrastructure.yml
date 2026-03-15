@@ -22,7 +22,12 @@ name: Setup AWS Infrastructure (One-time)
 # The IAM user running this workflow needs the following permissions IN ADDITION
 # to those in the deploy workflow:
 #   iam:CreateRole, iam:GetRole, iam:AttachRolePolicy, iam:PutRolePolicy
+#   ec2:CreateVpc, ec2:ModifyVpcAttribute, ec2:DescribeVpcs
+#   ec2:CreateSubnet, ec2:DescribeSubnets, ec2:ModifySubnetAttribute, ec2:DescribeAvailabilityZones
+#   ec2:CreateInternetGateway, ec2:AttachInternetGateway, ec2:DescribeInternetGateways
+#   ec2:CreateRouteTable, ec2:CreateRoute, ec2:AssociateRouteTable, ec2:DescribeRouteTables
 #   ec2:CreateSecurityGroup, ec2:AuthorizeSecurityGroupIngress, ec2:DescribeSecurityGroups
+#   ec2:CreateTags
 #   elasticloadbalancing:* (create ALB, target group, listener, rules)
 #   acm:RequestCertificate, acm:DescribeCertificate, acm:ListCertificates, acm:AddTagsToCertificate
 #   route53:ChangeResourceRecordSets, route53:ListResourceRecordSets
@@ -37,14 +42,6 @@ on:
         description: 'AWS region'
         required: true
         default: 'eu-west-1'
-        type: string
-      vpc_id:
-        description: 'VPC ID to deploy into (e.g. vpc-0abc1234)'
-        required: true
-        type: string
-      subnet_ids:
-        description: 'Comma-separated public subnet IDs — min 2 AZs (e.g. subnet-aaa,subnet-bbb)'
-        required: true
         type: string
       domain:
         description: 'Public domain name'
@@ -64,7 +61,6 @@ jobs:
     env:
       AWS_REGION:           ${{ inputs.region }}
       DOMAIN:               ${{ inputs.domain }}
-      VPC_ID:               ${{ inputs.vpc_id }}
       HOSTED_ZONE_ID:       ${{ inputs.hosted_zone_id }}
       GOOGLE_CLIENT_ID:     ${{ vars.GOOGLE_OAUTH_CLIENT_ID }}
       GOOGLE_ALLOWED_EMAIL: ${{ vars.GOOGLE_ALLOWED_EMAIL }}
@@ -81,6 +77,98 @@ jobs:
         id: account
         run: |
           echo "id=$(aws sts get-caller-identity --query Account --output text)" >> "$GITHUB_OUTPUT"
+
+      # ── 0. VPC and Subnets ──────────────────────────────────────────────────
+      - name: Create VPC and public subnets
+        id: vpc
+        run: |
+          # Reuse existing wallboard VPC if already created
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:project,Values=wallboard" \
+            --query 'Vpcs[0].VpcId' \
+            --output text 2>/dev/null)
+
+          if [ -z "$VPC_ID" ] || [ "$VPC_ID" = "None" ]; then
+            VPC_ID=$(aws ec2 create-vpc \
+              --cidr-block 10.0.0.0/20 \
+              --query 'Vpc.VpcId' --output text)
+            aws ec2 modify-vpc-attribute --vpc-id "$VPC_ID" --enable-dns-support
+            aws ec2 modify-vpc-attribute --vpc-id "$VPC_ID" --enable-dns-hostnames
+            aws ec2 create-tags --resources "$VPC_ID" \
+              --tags Key=Name,Value=wallboard-vpc Key=project,Value=wallboard
+            echo "Created VPC: $VPC_ID"
+          else
+            echo "Reusing existing VPC: $VPC_ID"
+          fi
+
+          # Internet Gateway
+          IGW_ID=$(aws ec2 describe-internet-gateways \
+            --filters "Name=attachment.vpc-id,Values=${VPC_ID}" \
+            --query 'InternetGateways[0].InternetGatewayId' --output text)
+          if [ -z "$IGW_ID" ] || [ "$IGW_ID" = "None" ]; then
+            IGW_ID=$(aws ec2 create-internet-gateway --query 'InternetGateway.InternetGatewayId' --output text)
+            aws ec2 attach-internet-gateway --internet-gateway-id "$IGW_ID" --vpc-id "$VPC_ID"
+            aws ec2 create-tags --resources "$IGW_ID" \
+              --tags Key=Name,Value=wallboard-igw Key=project,Value=wallboard
+          fi
+
+          # Route table with default internet route
+          RTB_ID=$(aws ec2 describe-route-tables \
+            --filters "Name=vpc-id,Values=${VPC_ID}" "Name=tag:project,Values=wallboard" \
+            --query 'RouteTables[0].RouteTableId' --output text)
+          if [ -z "$RTB_ID" ] || [ "$RTB_ID" = "None" ]; then
+            RTB_ID=$(aws ec2 create-route-table --vpc-id "$VPC_ID" \
+              --query 'RouteTable.RouteTableId' --output text)
+            aws ec2 create-route --route-table-id "$RTB_ID" \
+              --destination-cidr-block 0.0.0.0/0 --gateway-id "$IGW_ID"
+            aws ec2 create-tags --resources "$RTB_ID" \
+              --tags Key=Name,Value=wallboard-rtb Key=project,Value=wallboard
+          fi
+
+          # Pick first 2 AZs in the region
+          AZ_A=$(aws ec2 describe-availability-zones \
+            --region "$AWS_REGION" \
+            --query 'AvailabilityZones[0].ZoneName' --output text)
+          AZ_B=$(aws ec2 describe-availability-zones \
+            --region "$AWS_REGION" \
+            --query 'AvailabilityZones[1].ZoneName' --output text)
+
+          # Subnet A — 10.0.0.0/24
+          SUBNET_A=$(aws ec2 describe-subnets \
+            --filters "Name=vpc-id,Values=${VPC_ID}" "Name=cidrBlock,Values=10.0.0.0/24" \
+            --query 'Subnets[0].SubnetId' --output text)
+          if [ -z "$SUBNET_A" ] || [ "$SUBNET_A" = "None" ]; then
+            SUBNET_A=$(aws ec2 create-subnet \
+              --vpc-id "$VPC_ID" --cidr-block 10.0.0.0/24 \
+              --availability-zone "$AZ_A" \
+              --query 'Subnet.SubnetId' --output text)
+            aws ec2 modify-subnet-attribute --subnet-id "$SUBNET_A" \
+              --map-public-ip-on-launch
+            aws ec2 associate-route-table --subnet-id "$SUBNET_A" --route-table-id "$RTB_ID"
+            aws ec2 create-tags --resources "$SUBNET_A" \
+              --tags Key=Name,Value=wallboard-subnet-a Key=project,Value=wallboard
+          fi
+
+          # Subnet B — 10.0.1.0/24
+          SUBNET_B=$(aws ec2 describe-subnets \
+            --filters "Name=vpc-id,Values=${VPC_ID}" "Name=cidrBlock,Values=10.0.1.0/24" \
+            --query 'Subnets[0].SubnetId' --output text)
+          if [ -z "$SUBNET_B" ] || [ "$SUBNET_B" = "None" ]; then
+            SUBNET_B=$(aws ec2 create-subnet \
+              --vpc-id "$VPC_ID" --cidr-block 10.0.1.0/24 \
+              --availability-zone "$AZ_B" \
+              --query 'Subnet.SubnetId' --output text)
+            aws ec2 modify-subnet-attribute --subnet-id "$SUBNET_B" \
+              --map-public-ip-on-launch
+            aws ec2 associate-route-table --subnet-id "$SUBNET_B" --route-table-id "$RTB_ID"
+            aws ec2 create-tags --resources "$SUBNET_B" \
+              --tags Key=Name,Value=wallboard-subnet-b Key=project,Value=wallboard
+          fi
+
+          echo "vpc_id=${VPC_ID}"             >> "$GITHUB_OUTPUT"
+          echo "subnet_a=${SUBNET_A}"          >> "$GITHUB_OUTPUT"
+          echo "subnet_b=${SUBNET_B}"          >> "$GITHUB_OUTPUT"
+          echo "subnet_ids=${SUBNET_A},${SUBNET_B}" >> "$GITHUB_OUTPUT"
 
       # ── 1. ECR Repository ───────────────────────────────────────────────────
       - name: Create ECR repository
@@ -167,6 +255,8 @@ jobs:
       - name: Create ALB security group
         id: alb-sg
         run: |
+          VPC_ID="${{ steps.vpc.outputs.vpc_id }}"
+
           SG_ID=$(aws ec2 describe-security-groups \
             --filters "Name=group-name,Values=wallboard-alb-sg" \
                       "Name=vpc-id,Values=${VPC_ID}" \
@@ -190,6 +280,7 @@ jobs:
       - name: Create ECS task security group
         id: ecs-sg
         run: |
+          VPC_ID="${{ steps.vpc.outputs.vpc_id }}"
           ALB_SG="${{ steps.alb-sg.outputs.sg_id }}"
 
           SG_ID=$(aws ec2 describe-security-groups \
@@ -275,8 +366,8 @@ jobs:
         id: alb
         run: |
           ALB_SG="${{ steps.alb-sg.outputs.sg_id }}"
-          # Convert comma-separated subnet list to space-separated for CLI
-          SUBNETS=$(echo "${{ inputs.subnet_ids }}" | tr ',' ' ')
+          # Subnets created in vpc step
+          SUBNETS="${{ steps.vpc.outputs.subnet_a }} ${{ steps.vpc.outputs.subnet_b }}"
 
           ALB_ARN=$(aws elbv2 describe-load-balancers \
             --names wallboard-alb \
@@ -319,7 +410,7 @@ jobs:
               --name wallboard-tg \
               --protocol HTTP \
               --port 8080 \
-              --vpc-id "$VPC_ID" \
+              --vpc-id "${{ steps.vpc.outputs.vpc_id }}" \
               --target-type ip \
               --health-check-path /ourwallboard/ \
               --health-check-interval-seconds 30 \
@@ -496,6 +587,9 @@ jobs:
             echo ""
             echo "| Resource | Value |"
             echo "|---|---|"
+            echo "| VPC | \`${{ steps.vpc.outputs.vpc_id }}\` |"
+            echo "| Subnet A | \`${{ steps.vpc.outputs.subnet_a }}\` |"
+            echo "| Subnet B | \`${{ steps.vpc.outputs.subnet_b }}\` |"
             echo "| ECR Repository | \`${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/magicmirror-wallboard\` |"
             echo "| ECS Cluster | \`wallboard-cluster\` |"
             echo "| ACM Certificate | \`${{ steps.acm.outputs.arn }}\` |"
@@ -512,12 +606,12 @@ jobs:
             echo "   - Replace \`<ACCOUNT_ID>\` with \`${ACCOUNT_ID}\`"
             echo "   - Replace \`<REGION>\` with \`${AWS_REGION}\`"
             echo "   - Set ECS task security group: \`${{ steps.ecs-sg.outputs.sg_id }}\`"
-            echo "   - Set subnets: \`${{ inputs.subnet_ids }}\`"
+            echo "   - Set subnets: \`${{ steps.vpc.outputs.subnet_ids }}\`"
             echo ""
             echo "2. Set these repository variables in GitHub (Settings → Secrets and variables → Actions):"
             echo "   | Variable | Value |"
             echo "   |---|---|"
-            echo "   | \`ECS_SUBNET_IDS\` | \`${{ inputs.subnet_ids }}\` |"
+            echo "   | \`ECS_SUBNET_IDS\` | \`${{ steps.vpc.outputs.subnet_ids }}\` |"
             echo "   | \`ECS_SECURITY_GROUP_ID\` | \`${{ steps.ecs-sg.outputs.sg_id }}\` |"
             echo "   | \`ECS_TARGET_GROUP_ARN\` | \`${{ steps.tg.outputs.arn }}\` |"
             echo ""
