@@ -66,6 +66,20 @@ jobs:
       GOOGLE_ALLOWED_EMAIL: ${{ vars.GOOGLE_ALLOWED_EMAIL }}
 
     steps:
+      - name: 🧪 Validate required variables and secrets
+        run: |
+          ERRORS=""
+          [ -z "${{ vars.GOOGLE_OAUTH_CLIENT_ID }}" ]  && ERRORS="${ERRORS}\n  - GOOGLE_OAUTH_CLIENT_ID (PROD environment variable) is not set"
+          [ -z "${{ vars.GOOGLE_ALLOWED_EMAIL }}" ]    && ERRORS="${ERRORS}\n  - GOOGLE_ALLOWED_EMAIL (PROD environment variable) is not set"
+          [ -z "${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}" ] && ERRORS="${ERRORS}\n  - GOOGLE_OAUTH_CLIENT_SECRET (PROD environment secret) is not set"
+          [ -z "${{ secrets.GCAL_SECRET_URL }}" ]      && ERRORS="${ERRORS}\n  - GCAL_SECRET_URL (PROD environment secret) is not set"
+          [ -z "${{ secrets.OPENWEATHER_API_KEY }}" ]  && ERRORS="${ERRORS}\n  - OPENWEATHER_API_KEY (PROD environment secret) is not set"
+          if [ -n "$ERRORS" ]; then
+            echo "::error::Missing required configuration. Set these in GitHub Settings -> Environments -> PROD before running:${ERRORS}"
+            exit 1
+          fi
+          echo "✅ All required variables and secrets are present."
+
       - name: 🔑 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
