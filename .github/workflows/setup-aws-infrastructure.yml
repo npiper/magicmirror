@@ -469,9 +469,15 @@ jobs:
               --default-actions \
                 Type=fixed-response,FixedResponseConfig="{MessageBody=Forbidden,StatusCode=403,ContentType=text/plain}" \
               --query 'Listeners[0].ListenerArn' --output text)
+          fi
 
-            # Rule priority 10: /ourwallboard* → authenticate-oidc (Google) → forward
-            # Build actions JSON using jq to avoid heredoc YAML parse issues
+          # Rule priority 10: /ourwallboard* → authenticate-oidc (Google) → forward
+          # Always ensure this rule exists (idempotent — skipped if priority 10 already present)
+          EXISTING_RULE=$(aws elbv2 describe-rules \
+            --listener-arn "$LISTENER_ARN" \
+            --query 'Rules[?Priority==`10`].RuleArn | [0]' \
+            --output text 2>/dev/null)
+          if [ -z "$EXISTING_RULE" ] || [ "$EXISTING_RULE" = "None" ]; then
             jq -n \
               --arg client_id     "$GOOGLE_CLIENT_ID" \
               --arg client_secret "$GOOGLE_CLIENT_SECRET" \
@@ -505,6 +511,9 @@ jobs:
               --conditions Field=path-pattern,Values='/ourwallboard*' \
               --actions file:///tmp/oidc-actions.json
             rm -f /tmp/oidc-actions.json
+            echo "✅ Listener rule created."
+          else
+            echo "ℹ️ Listener rule (priority 10) already exists — skipping."
           fi
 
       # ── 8. Route 53 A record ────────────────────────────────────────────────
