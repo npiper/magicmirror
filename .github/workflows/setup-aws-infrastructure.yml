@@ -66,20 +66,20 @@ jobs:
       GOOGLE_ALLOWED_EMAIL: ${{ vars.GOOGLE_ALLOWED_EMAIL }}
 
     steps:
-      - name: Configure AWS credentials
+      - name: 🔑 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region:            ${{ inputs.region }}
 
-      - name: Get AWS account ID
+      - name: 📛 Get AWS account ID
         id: account
         run: |
           echo "id=$(aws sts get-caller-identity --query Account --output text)" >> "$GITHUB_OUTPUT"
 
       # ── 0. VPC and Subnets ──────────────────────────────────────────────────
-      - name: Create VPC and public subnets
+      - name: 🌐 Create VPC and public subnets
         id: vpc
         run: |
           # Reuse existing wallboard VPC if already created
@@ -171,7 +171,7 @@ jobs:
           echo "subnet_ids=${SUBNET_A},${SUBNET_B}" >> "$GITHUB_OUTPUT"
 
       # ── 1. ECR Repository ───────────────────────────────────────────────────
-      - name: Create ECR repository
+      - name: 📦 Create ECR repository
         run: |
           aws ecr describe-repositories \
             --repository-names magicmirror-wallboard \
@@ -183,7 +183,7 @@ jobs:
               --tags Key=project,Value=wallboard
 
       # ── 2. ECS Cluster ──────────────────────────────────────────────────────
-      - name: Create ECS cluster
+      - name: ⚙️ Create ECS cluster
         run: |
           aws ecs create-cluster \
             --cluster-name wallboard-cluster \
@@ -193,7 +193,7 @@ jobs:
             --region "$AWS_REGION"
 
       # ── 3. CloudWatch Log Group ─────────────────────────────────────────────
-      - name: Create CloudWatch log group
+      - name: 📝 Create CloudWatch log group
         run: |
           aws logs create-log-group \
             --log-group-name /ecs/magicmirror-wallboard \
@@ -204,7 +204,7 @@ jobs:
             --region "$AWS_REGION"
 
       # ── 4. IAM Roles ────────────────────────────────────────────────────────
-      - name: Create ECS Task Execution Role
+      - name: 🛡️ Create ECS Task Execution Role
         env:
           ACCOUNT_ID: ${{ steps.account.outputs.id }}
         run: |
@@ -237,7 +237,7 @@ jobs:
               }]
             }"
 
-      - name: Create ECS Task Role
+      - name: 👤 Create ECS Task Role
         run: |
           aws iam get-role --role-name ecsTaskRole 2>/dev/null \
           || aws iam create-role \
@@ -252,7 +252,7 @@ jobs:
               }'
 
       # ── 5. Security Groups ──────────────────────────────────────────────────
-      - name: Create ALB security group
+      - name: 🚪 Create ALB security group
         id: alb-sg
         run: |
           VPC_ID="${{ steps.vpc.outputs.vpc_id }}"
@@ -277,7 +277,7 @@ jobs:
           fi
           echo "sg_id=$SG_ID" >> "$GITHUB_OUTPUT"
 
-      - name: Create ECS task security group
+      - name: 🔒 Create ECS task security group
         id: ecs-sg
         run: |
           VPC_ID="${{ steps.vpc.outputs.vpc_id }}"
@@ -304,7 +304,7 @@ jobs:
           echo "sg_id=$SG_ID" >> "$GITHUB_OUTPUT"
 
       # ── 6. ACM Certificate ──────────────────────────────────────────────────
-      - name: Request ACM certificate
+      - name: 📜 Request ACM certificate
         id: acm
         run: |
           CERT_ARN=$(aws acm list-certificates \
@@ -325,7 +325,7 @@ jobs:
           fi
           echo "arn=$CERT_ARN" >> "$GITHUB_OUTPUT"
 
-      - name: Add ACM DNS validation records to Route 53
+      - name: ✅ Add ACM DNS validation records to Route 53
         run: |
           CERT_ARN="${{ steps.acm.outputs.arn }}"
 
@@ -362,7 +362,7 @@ jobs:
             --region "$AWS_REGION"
 
       # ── 7. Application Load Balancer ────────────────────────────────────────
-      - name: Create Application Load Balancer
+      - name: ⚖️ Create Application Load Balancer
         id: alb
         run: |
           ALB_SG="${{ steps.alb-sg.outputs.sg_id }}"
@@ -397,7 +397,7 @@ jobs:
           echo "dns=$ALB_DNS"   >> "$GITHUB_OUTPUT"
           echo "zone=$ALB_ZONE" >> "$GITHUB_OUTPUT"
 
-      - name: Create target group
+      - name: 🎯 Create target group
         id: tg
         run: |
           TG_ARN=$(aws elbv2 describe-target-groups \
@@ -420,7 +420,7 @@ jobs:
           fi
           echo "arn=$TG_ARN" >> "$GITHUB_OUTPUT"
 
-      - name: Create HTTPS listener (with HTTP→HTTPS redirect)
+      - name: 🔐 Create HTTPS listener (with HTTP→HTTPS redirect)
         env:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
         run: |
@@ -494,7 +494,7 @@ jobs:
           fi
 
       # ── 8. Route 53 A record ────────────────────────────────────────────────
-      - name: Create Route 53 alias A record → ALB
+      - name: 📍 Create Route 53 alias A record → ALB
         run: |
           ALB_DNS="${{ steps.alb.outputs.dns }}"
           ALB_ZONE="${{ steps.alb.outputs.zone }}"
@@ -517,7 +517,7 @@ jobs:
             }"
 
       # ── 9. Secrets Manager ──────────────────────────────────────────────────
-      - name: Store GCAL_SECRET_URL in Secrets Manager
+      - name: 📅 Store GCAL_SECRET_URL in Secrets Manager
         run: |
           aws secretsmanager describe-secret \
             --secret-id wallboard/GCAL_SECRET_URL \
@@ -532,7 +532,7 @@ jobs:
               --secret-string "${{ secrets.GCAL_SECRET_URL }}" \
               --region "$AWS_REGION"
 
-      - name: Store GCAL_NP_SECRET_URL in Secrets Manager
+      - name: 📅 Store GCAL_NP_SECRET_URL in Secrets Manager
         run: |
           aws secretsmanager describe-secret \
             --secret-id wallboard/GCAL_NP_SECRET_URL \
@@ -547,7 +547,7 @@ jobs:
               --secret-string "${{ secrets.GCAL_NP_SECRET_URL }}" \
               --region "$AWS_REGION"
 
-      - name: Store OPENWEATHER_API_KEY in Secrets Manager
+      - name: ⛅ Store OPENWEATHER_API_KEY in Secrets Manager
         run: |
           aws secretsmanager describe-secret \
             --secret-id wallboard/OPENWEATHER_API_KEY \
@@ -562,7 +562,7 @@ jobs:
               --secret-string "${{ secrets.OPENWEATHER_API_KEY }}" \
               --region "$AWS_REGION"
 
-      - name: Store Google OIDC client secret in Secrets Manager
+      - name: 🔗 Store Google OIDC client secret in Secrets Manager
         run: |
           aws secretsmanager describe-secret \
             --secret-id wallboard/oidc-client-secret \
@@ -578,7 +578,7 @@ jobs:
               --region "$AWS_REGION"
 
       # ── 10. Summary ─────────────────────────────────────────────────────────
-      - name: Print infrastructure summary
+      - name: 🎉 Print infrastructure summary
         env:
           ACCOUNT_ID: ${{ steps.account.outputs.id }}
         run: |
