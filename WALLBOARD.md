@@ -414,7 +414,7 @@ Browser → ALB → (no valid session cookie?)
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services → OAuth consent screen**
 2. User type: **External** → **Create**
 3. Fill in app name (`wallboard-alb`), support email, developer email → **Save and Continue** through Scopes
-4. Under **Test users** → **Add users** — add all 3 Gmail addresses (yours, wife's, daughter's)
+4. Under **Test users** → **Add users** — add the Gmail addresses for each person who should have access (e.g. 3 separate people)
 5. Leave the app in **Testing** status — **do not publish**. Only the listed test users can log in. Google does not require app verification for testing mode.
 6. Go to **APIs & Services → Credentials** → **Create credentials → OAuth 2.0 Client ID**
 7. Application type: **Web application**, name: `wallboard-alb`
