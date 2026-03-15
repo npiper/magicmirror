@@ -6,8 +6,9 @@ name: Setup AWS Infrastructure (One-time)
 #   AWS_ACCESS_KEY_ID          — IAM deploy user access key
 #   AWS_SECRET_KEY             — IAM deploy user secret key
 #   GCAL_SECRET_URL            — Google Calendar secret iCal URL
-#   GOOGLE_OAUTH_CLIENT_SECRET — Google OAuth 2.0 client secret (from Google Cloud Console)
-#   OPENWEATHER_API_KEY        — OpenWeatherMap API key for current/forecast weather
+#   GCAL_NP_SECRET_URL          — Secondary Google Calendar secret iCal URL
+#   OPENWEATHER_API_KEY         — OpenWeatherMap API key for current/forecast weather
+#   GOOGLE_OAUTH_CLIENT_SECRET  — Google OAuth 2.0 client secret (from Google Cloud Console)
 #
 # Required PROD environment VARIABLES (Settings → Environments → PROD → Variables):
 #   GOOGLE_OAUTH_CLIENT_ID     — Google OAuth 2.0 client ID (from Google Cloud Console)
@@ -433,6 +434,21 @@ EOF
               --name wallboard/GCAL_SECRET_URL \
               --description "Google Calendar secret iCal URL for MagicMirror wallboard" \
               --secret-string "${{ secrets.GCAL_SECRET_URL }}" \
+              --region "$AWS_REGION"
+
+      - name: Store GCAL_NP_SECRET_URL in Secrets Manager
+        run: |
+          aws secretsmanager describe-secret \
+            --secret-id wallboard/GCAL_NP_SECRET_URL \
+            --region "$AWS_REGION" 2>/dev/null \
+          && aws secretsmanager put-secret-value \
+              --secret-id wallboard/GCAL_NP_SECRET_URL \
+              --secret-string "${{ secrets.GCAL_NP_SECRET_URL }}" \
+              --region "$AWS_REGION" \
+          || aws secretsmanager create-secret \
+              --name wallboard/GCAL_NP_SECRET_URL \
+              --description "Secondary Google Calendar secret iCal URL for MagicMirror wallboard" \
+              --secret-string "${{ secrets.GCAL_NP_SECRET_URL }}" \
               --region "$AWS_REGION"
 
       - name: Store OPENWEATHER_API_KEY in Secrets Manager
