@@ -1,5 +1,18 @@
 name: Deploy Wallboard to AWS ECS
 
+# Required PROD environment SECRETS (Settings → Environments → PROD → Secrets):
+#   AWS_ACCESS_KEY_ID          — IAM deploy user access key
+#   AWS_SECRET_ACCESS_KEY      — IAM deploy user secret key
+#
+# Required PROD environment VARIABLES (Settings → Environments → PROD → Variables):
+#   AWS_REGION                 — e.g. eu-west-2
+#   ECS_SUBNET_IDS             — comma-separated subnet IDs for the ECS task
+#   ECS_SECURITY_GROUP_ID      — security group ID for the ECS task
+#   ECS_TARGET_GROUP_ARN       — ARN of the ALB target group
+#
+# These values are only available to jobs that reference 'environment: PROD'
+# and have passed the required deployment protection / approval gate.
+
 on:
   push:
     branches:

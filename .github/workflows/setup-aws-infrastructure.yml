@@ -2,15 +2,18 @@ name: Setup AWS Infrastructure (One-time)
 
 # Idempotent — safe to re-run. Each step checks for existing resources before creating.
 #
-# Required repository SECRETS:
+# Required PROD environment SECRETS (Settings → Environments → PROD → Secrets):
 #   AWS_ACCESS_KEY_ID          — IAM deploy user access key
 #   AWS_SECRET_ACCESS_KEY      — IAM deploy user secret key
 #   GCAL_SECRET_URL            — Google Calendar secret iCal URL
 #   GOOGLE_OAUTH_CLIENT_SECRET — Google OAuth 2.0 client secret (from Google Cloud Console)
 #
-# Required repository VARIABLES:
+# Required PROD environment VARIABLES (Settings → Environments → PROD → Variables):
 #   GOOGLE_OAUTH_CLIENT_ID     — Google OAuth 2.0 client ID (from Google Cloud Console)
 #   GOOGLE_ALLOWED_EMAIL       — Google account to allow (e.g. yourname@gmail.com)
+#
+# These values are only available to jobs that reference 'environment: PROD'
+# and have passed the required deployment protection / approval gate.
 #
 # The IAM user running this workflow needs the following permissions IN ADDITION
 # to those in the deploy workflow:
