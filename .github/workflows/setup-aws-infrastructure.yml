@@ -330,6 +330,8 @@ jobs:
           echo "arn=$TG_ARN" >> "$GITHUB_OUTPUT"
 
       - name: Create HTTPS listener (with HTTP→HTTPS redirect)
+        env:
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
         run: |
           CERT_ARN="${{ steps.acm.outputs.arn }}"
           ALB_ARN="${{ steps.alb.outputs.arn }}"
@@ -364,33 +366,34 @@ jobs:
               --query 'Listeners[0].ListenerArn' --output text)
 
             # Rule priority 10: /ourwallboard* → authenticate-oidc (Google) → forward
-            # Builds actions JSON into a temp file to safely handle secrets in shell
-            GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}"
-            cat > /tmp/oidc-actions.json <<EOF
-[
-  {
-    "Type": "authenticate-oidc",
-    "Order": 1,
-    "AuthenticateOidcConfig": {
-      "Issuer": "https://accounts.google.com",
-      "AuthorizationEndpoint": "https://accounts.google.com/o/oauth2/v2/auth",
-      "TokenEndpoint": "https://oauth2.googleapis.com/token",
-      "UserInfoEndpoint": "https://openidconnect.googleapis.com/v1/userinfo",
-      "ClientId": "${GOOGLE_CLIENT_ID}",
-      "ClientSecret": "${GOOGLE_CLIENT_SECRET}",
-      "Scope": "openid email",
-      "SessionCookieName": "AWSELBAuthSessionCookie",
-      "SessionTimeout": 2592000,
-      "OnUnauthenticatedRequest": "authenticate"
-    }
-  },
-  {
-    "Type": "forward",
-    "Order": 2,
-    "TargetGroupArn": "${TG_ARN}"
-  }
-]
-EOF
+            # Build actions JSON using jq to avoid heredoc YAML parse issues
+            jq -n \
+              --arg client_id     "$GOOGLE_CLIENT_ID" \
+              --arg client_secret "$GOOGLE_CLIENT_SECRET" \
+              --arg tg_arn        "$TG_ARN" \
+              '[
+                {
+                  "Type": "authenticate-oidc",
+                  "Order": 1,
+                  "AuthenticateOidcConfig": {
+                    "Issuer": "https://accounts.google.com",
+                    "AuthorizationEndpoint": "https://accounts.google.com/o/oauth2/v2/auth",
+                    "TokenEndpoint": "https://oauth2.googleapis.com/token",
+                    "UserInfoEndpoint": "https://openidconnect.googleapis.com/v1/userinfo",
+                    "ClientId": $client_id,
+                    "ClientSecret": $client_secret,
+                    "Scope": "openid email",
+                    "SessionCookieName": "AWSELBAuthSessionCookie",
+                    "SessionTimeout": 2592000,
+                    "OnUnauthenticatedRequest": "authenticate"
+                  }
+                },
+                {
+                  "Type": "forward",
+                  "Order": 2,
+                  "TargetGroupArn": $tg_arn
+                }
+              ]' > /tmp/oidc-actions.json
             aws elbv2 create-rule \
               --listener-arn "$LISTENER_ARN" \
               --priority 10 \
