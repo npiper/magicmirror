@@ -485,3 +485,104 @@ Add to the [Pre-requisites](#pre-requisites-one-time-manual-setup) list:
 - [MagicMirror² official docs](https://docs.magicmirror.builders/)
 - [karsten13/magicmirror Docker Hub](https://hub.docker.com/r/karsten13/magicmirror)
 - [MMM-CalendarExt3 GitHub](https://github.com/MMRIZE/MMM-CalendarExt3)
+
+
+---
+
+## Appendix: Optional Module Configurations
+
+### A. Compliments (built-in)
+
+Rotates encouraging messages by time of day — no install needed. Add to `mounts/config/config.js`:
+
+```js
+{
+    module: "compliments",
+    position: "lower_third",
+    config: {
+        updateInterval: 30000,
+        compliments: {
+            morning: [
+                "Good morning! 🌞",
+                "Rise and shine! ✨",
+                "Today is going to be amazing!",
+                "Have a brilliant day at school!",
+            ],
+            afternoon: [
+                "Hope your day is going well! 😊",
+                "Almost home time! 🎒",
+                "Keep smiling! 😄",
+            ],
+            evening: [
+                "Welcome home! 🏠",
+                "Time to relax! 🌙",
+                "Great job today! ⭐",
+            ],
+            anytime: [
+                "Be kind, be brave, be you! 💫",
+                "You are enough! 🌈",
+                "Dream big! 🚀",
+                "Spread kindness like confetti! 🎉",
+            ]
+        }
+    }
+},
+```
+
+---
+
+### B. MMM-EasyPix with Dropbox Photo Slideshow
+
+Displays a rotating photo slideshow from a local folder. No Dropbox API needed — use Dropbox selective sync to keep a folder on your Mac in sync, then mount it into the container.
+
+#### Step 1 — Install the module
+
+```bash
+cd mounts/modules
+git clone https://github.com/mykle1/MMM-EasyPix
+```
+
+No npm dependencies needed.
+
+#### Step 2 — Create a synced Dropbox folder
+
+In the Dropbox desktop app create a folder (e.g. `wallboard-photos`) and add photos to it from any device. Dropbox syncs it to your Mac at `~/Dropbox/wallboard-photos/`.
+
+#### Step 3 — Mount the folder into the container
+
+Add a volume entry in `run/includes/base.yaml` under the `x-master` volumes section:
+
+```yaml
+x-master: &master
+  volumes:
+    - ${VOLUME_CONFIG}
+    - ${VOLUME_MODULES}
+    - ${VOLUME_CSS}
+    - ~/Dropbox/wallboard-photos:/opt/magic_mirror/photos:ro   # add this line
+```
+
+The `:ro` flag mounts it read-only — the container cannot modify your photos.
+
+#### Step 4 — Add to config.js
+
+```js
+{
+    module: "MMM-EasyPix",
+    position: "top_right",
+    config: {
+        picFolder: "/opt/magic_mirror/photos/",
+        updateInterval: 60,
+        opacity: 0.9,
+        maxWidth: "400px",
+        maxHeight: "300px"
+    }
+},
+```
+
+#### Step 5 — Restart
+
+```bash
+cd run && docker compose down && docker compose up -d
+```
+
+Photos added to the Dropbox folder on any phone, tablet, or computer appear on the wallboard automatically once synced.

@@ -30,7 +30,7 @@ GCAL_NP_SECRET_URL=https://calendar.google.com/calendar/ical/.../basic.ics
 # Optional — defaults shown below
 MM_SCENARIO=server
 MM_INIT=init
-MM_SERVER_PORTS=8080:8080
+MM_SERVER_PORTS=80:8080
 MM_MMPM=mmpm
 MM_WATCHTOWER=
 ```
@@ -41,7 +41,7 @@ MM_WATCHTOWER=
 | `GCAL_NP_SECRET_URL` | ✅ | Secondary calendar iCal feed (e.g. personal) |
 | `MM_SCENARIO` | No | MagicMirror scenario (default: `server`) |
 | `MM_INIT` | No | Initialisation mode (default: `init`) |
-| `MM_SERVER_PORTS` | No | Host:container port mapping (default: `8080:8080`) |
+| `MM_SERVER_PORTS` | No | Host:container port mapping (default: `80:8080`) |
 | `MM_MMPM` | No | Enable MMPM package manager; set to `mmpm` or leave empty |
 | `MM_WATCHTOWER` | No | Enable Watchtower auto-updates; leave empty to disable |
 
@@ -84,11 +84,11 @@ Or use the convenience script from the repo root:
 ./run/start.sh
 ```
 
-MagicMirror² is then available at **http://localhost:8080**
+MagicMirror² is then available at **http://localhost**
 
 ### 5. MMPM Package Manager (optional)
 
-If `MM_MMPM=mmpm` is set in your `.env`, the MMPM web UI is available at **http://localhost:7890**.
+If `MM_MMPM=mmpm` is set in your `.env`, the MMPM web UI is available at **http://localhost:7890**. MagicMirror² runs on port 80 (host) mapped to 8080 inside the container.
 
 ## Project Structure
 

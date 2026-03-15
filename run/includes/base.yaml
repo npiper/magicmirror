@@ -12,6 +12,7 @@ x-master: &master
     - MM_CUSTOMCSS_FILE
     - GCAL_SECRET_URL
     - GCAL_NP_SECRET_URL
+    - OPENWEATHER_API_KEY
   post_start:
     - command:
         - /bin/sh
