@@ -266,7 +266,7 @@ jobs:
           if [ -z "$SG_ID" ] || [ "$SG_ID" = "None" ]; then
             SG_ID=$(aws ec2 create-security-group \
               --group-name wallboard-alb-sg \
-              --description "Wallboard ALB — allow HTTP/HTTPS inbound from internet" \
+              --description "Wallboard ALB - allow HTTP/HTTPS inbound from internet" \
               --vpc-id "$VPC_ID" \
               --query GroupId --output text)
 
@@ -292,7 +292,7 @@ jobs:
           if [ -z "$SG_ID" ] || [ "$SG_ID" = "None" ]; then
             SG_ID=$(aws ec2 create-security-group \
               --group-name wallboard-ecs-sg \
-              --description "Wallboard ECS — allow port 8080 from ALB only" \
+              --description "Wallboard ECS - allow port 8080 from ALB only" \
               --vpc-id "$VPC_ID" \
               --query GroupId --output text)
 
