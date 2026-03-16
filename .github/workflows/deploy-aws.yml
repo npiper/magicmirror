@@ -102,8 +102,6 @@ jobs:
 
           if [ "$SERVICE_STATUS" != "ACTIVE" ]; then
             echo "Service not found — creating $ECS_SERVICE"
-            # Subnets and security group must match those created by the setup workflow.
-            # Set ECS_SUBNET_IDS and ECS_SECURITY_GROUP_ID as repository variables.
             aws ecs create-service \
               --cluster "$ECS_CLUSTER" \
               --service-name "$ECS_SERVICE" \
@@ -116,9 +114,13 @@ jobs:
                 assignPublicIp=ENABLED
               }" \
               --load-balancers "targetGroupArn=${{ vars.ECS_TARGET_GROUP_ARN }},containerName=${CONTAINER_NAME},containerPort=8080" \
-              --health-check-grace-period-seconds 60
+              --health-check-grace-period-seconds 150
           else
-            echo "Service $ECS_SERVICE already exists — will update in next step"
+            echo "Service $ECS_SERVICE already exists — ensuring grace period is current"
+            aws ecs update-service \
+              --cluster "$ECS_CLUSTER" \
+              --service "$ECS_SERVICE" \
+              --health-check-grace-period-seconds 150 > /dev/null
           fi
 
       - name: Deploy ECS task definition
@@ -128,3 +130,4 @@ jobs:
           service:         ${{ env.ECS_SERVICE }}
           cluster:         ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
+          wait-for-minutes:           10
