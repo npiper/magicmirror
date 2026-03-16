@@ -436,7 +436,7 @@ jobs:
             aws elbv2 modify-target-group \
               --target-group-arn "$TG_ARN" \
               --health-check-path / \
-              --matcher HttpCode=200,401
+              --matcher '{"HttpCode":"200,401"}'
           fi
           echo "arn=$TG_ARN" >> "$GITHUB_OUTPUT"
 
