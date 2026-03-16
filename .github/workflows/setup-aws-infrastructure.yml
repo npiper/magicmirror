@@ -501,11 +501,12 @@ jobs:
               }
             ]' > /tmp/oidc-actions.json
 
+          # Priority is returned as a string by ALB — use jq for reliable comparison
           EXISTING_RULE=$(aws elbv2 describe-rules \
             --listener-arn "$LISTENER_ARN" \
-            --query 'Rules[?Priority==`10`].RuleArn | [0]' \
-            --output text 2>/dev/null)
-          if [ -z "$EXISTING_RULE" ] || [ "$EXISTING_RULE" = "None" ]; then
+            --output json \
+            | jq -r '.Rules[] | select(.Priority == "10") | .RuleArn')
+          if [ -z "$EXISTING_RULE" ]; then
             aws elbv2 create-rule \
               --listener-arn "$LISTENER_ARN" \
               --priority 10 \
