@@ -2,8 +2,7 @@
  *
  * This file is committed and safe — no secrets are hardcoded.
  * GCAL_SECRET_URL is injected at runtime by ECS from AWS Secrets Manager.
- *
- * basePath is set to /ourwallboard/ to match the ALB path routing rule.
+ * envsubst is run at container startup to substitute ${GCAL_SECRET_URL}.
  */
 let config = {
     address: "0.0.0.0",
@@ -43,7 +42,7 @@ let config = {
                     {
                         symbol: "calendar-alt",
                         color: "#5B89C8",
-                        url: process.env.GCAL_SECRET_URL
+                        url: "${GCAL_SECRET_URL}"
                     }
                 ],
                 customEvents: [

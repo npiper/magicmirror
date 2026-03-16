@@ -8,7 +8,7 @@
 FROM karsten13/magicmirror:latest
 
 # Copy wallboard configuration and CSS
-COPY config.js     /opt/magic_mirror/config/config.js
+COPY config.js     /opt/magic_mirror/config/config.js.template
 COPY custom.css    /opt/magic_mirror/css/custom.css
 
 # Install MMM-CalendarExt3
