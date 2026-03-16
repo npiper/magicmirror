@@ -383,7 +383,7 @@ Because `https://yourname.me/ourwallboard` is publicly reachable and displays a 
 
 ### Chosen approach: ALB built-in OIDC authentication
 
-AWS Application Load Balancer supports an `authenticate-oidc` listener rule action natively — no code changes to MagicMirror are needed. The ALB handles the entire OAuth 2.0 / OIDC flow and only forwards requests to ECS once the user is authenticated. A signed session cookie (`AWSELBAuthSessionCookie`) is set in the browser with a **30-day expiry**, so a TV or tablet only needs to authenticate once a month.
+AWS Application Load Balancer supports an `authenticate-oidc` listener rule action natively — no code changes to MagicMirror are needed. The ALB handles the entire OAuth 2.0 / OIDC flow and only forwards requests to ECS once the user is authenticated. A signed session cookie (`AWSELBAuthSessionCookie`) is set in the browser with a **7-day expiry** (the AWS ALB maximum), so a TV or tablet only needs to authenticate once a week.
 
 **Auth flow:**
 
@@ -393,7 +393,7 @@ Browser → ALB → (no valid session cookie?)
               → User logs in as yourname@gmail.com
               → Google redirects back to ALB /oauth2/idpresponse
               → ALB exchanges code for ID token, validates email claim
-              → Sets AWSELBAuthSessionCookie (30 days)
+              → Sets AWSELBAuthSessionCookie (7 days)
               → Forwards request to ECS Fargate (MagicMirror)
 ```
 
@@ -406,7 +406,7 @@ Browser → ALB → (no valid session cookie?)
 | ALB listener action | Forward → Target Group | **authenticate-oidc** → Forward → Target Group |
 | Google OAuth app | Not needed | Required (Google Cloud Console) |
 | Extra secret | — | `wallboard/oidc-client-secret` in Secrets Manager |
-| Session re-auth | Never (open) | Every **30 days** |
+| Session re-auth | Never (open) | Every **7 days** |
 | `email` claim check | — | Whitelist `yourname@gmail.com` via `AuthenticateOidcConfig.AuthenticationRequestExtraParams` or post-auth condition |
 
 ### One-time setup: Google OAuth 2.0 credentials
@@ -443,7 +443,7 @@ When creating or editing the HTTPS listener rule for `/ourwallboard*`, set the *
 | Client ID | *(from Google Cloud Console)* |
 | Client secret | *(ARN of `wallboard/oidc-client-secret` in Secrets Manager)* |
 | Scope | `openid email` |
-| Session timeout | `2592000` *(30 days in seconds)* |
+| Session timeout | `604800` *(7 days in seconds — AWS ALB maximum)* |
 | On unauthenticated request | `authenticate` *(redirect to Google login)* |
 
 The **second action** remains: Forward → wallboard target group.
@@ -464,7 +464,7 @@ Add to the [Pre-requisites](#pre-requisites-one-time-manual-setup) list:
 
 12. **Google OAuth credentials** — create Web application credentials in Google Cloud Console; add `https://yourname.me/oauth2/idpresponse` as an authorised redirect URI
 13. **Store OIDC client secret** in Secrets Manager as `wallboard/oidc-client-secret`
-14. **Update ALB listener rule** — change action from `Forward` to `authenticate-oidc → Forward` with `sessionTimeout: 2592000`
+14. **Update ALB listener rule** — change action from `Forward` to `authenticate-oidc → Forward` with `sessionTimeout: 604800`
 15. **Grant ECS Task Execution Role** read access to `wallboard/oidc-client-secret` (already covered by the `wallboard/*` Secrets Manager policy above)
 
 ---
