@@ -432,10 +432,11 @@ jobs:
               --tags Key=project,Value=wallboard \
               --query 'TargetGroups[0].TargetGroupArn' --output text)
           else
-            # Always ensure health check path is current
+            # Always ensure health check path and success codes are current
             aws elbv2 modify-target-group \
               --target-group-arn "$TG_ARN" \
-              --health-check-path /
+              --health-check-path / \
+              --matcher HttpCode=200,401
           fi
           echo "arn=$TG_ARN" >> "$GITHUB_OUTPUT"
 

@@ -2,8 +2,8 @@
     "family": "magicmirror-wallboard",
     "networkMode": "awsvpc",
     "requiresCompatibilities": ["FARGATE"],
-    "cpu": "256",
-    "memory": "512",
+    "cpu": "512",
+    "memory": "1024",
     "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
     "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskRole",
     "containerDefinitions": [
@@ -40,7 +40,7 @@
                 }
             },
             "healthCheck": {
-                "command": ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"],
+                "command": ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ | grep -qE '^(200|401)'"],
                 "interval": 30,
                 "timeout": 5,
                 "retries": 3,
