@@ -471,50 +471,55 @@ jobs:
               --query 'Listeners[0].ListenerArn' --output text)
           fi
 
-          # Rule priority 10: /ourwallboard* → authenticate-oidc (Google) → forward
-          # Always ensure this rule exists (idempotent — skipped if priority 10 already present)
+          # Rule priority 10: /* → authenticate-oidc (Google) → forward
+          # Idempotent: creates rule if missing, updates conditions/actions if already present
+          jq -n \
+            --arg client_id     "$GOOGLE_CLIENT_ID" \
+            --arg client_secret "$GOOGLE_CLIENT_SECRET" \
+            --arg tg_arn        "$TG_ARN" \
+            '[
+              {
+                "Type": "authenticate-oidc",
+                "Order": 1,
+                "AuthenticateOidcConfig": {
+                  "Issuer": "https://accounts.google.com",
+                  "AuthorizationEndpoint": "https://accounts.google.com/o/oauth2/v2/auth",
+                  "TokenEndpoint": "https://oauth2.googleapis.com/token",
+                  "UserInfoEndpoint": "https://openidconnect.googleapis.com/v1/userinfo",
+                  "ClientId": $client_id,
+                  "ClientSecret": $client_secret,
+                  "Scope": "openid email",
+                  "SessionCookieName": "AWSELBAuthSessionCookie",
+                  "SessionTimeout": 604800,
+                  "OnUnauthenticatedRequest": "authenticate"
+                }
+              },
+              {
+                "Type": "forward",
+                "Order": 2,
+                "TargetGroupArn": $tg_arn
+              }
+            ]' > /tmp/oidc-actions.json
+
           EXISTING_RULE=$(aws elbv2 describe-rules \
             --listener-arn "$LISTENER_ARN" \
             --query 'Rules[?Priority==`10`].RuleArn | [0]' \
             --output text 2>/dev/null)
           if [ -z "$EXISTING_RULE" ] || [ "$EXISTING_RULE" = "None" ]; then
-            jq -n \
-              --arg client_id     "$GOOGLE_CLIENT_ID" \
-              --arg client_secret "$GOOGLE_CLIENT_SECRET" \
-              --arg tg_arn        "$TG_ARN" \
-              '[
-                {
-                  "Type": "authenticate-oidc",
-                  "Order": 1,
-                  "AuthenticateOidcConfig": {
-                    "Issuer": "https://accounts.google.com",
-                    "AuthorizationEndpoint": "https://accounts.google.com/o/oauth2/v2/auth",
-                    "TokenEndpoint": "https://oauth2.googleapis.com/token",
-                    "UserInfoEndpoint": "https://openidconnect.googleapis.com/v1/userinfo",
-                    "ClientId": $client_id,
-                    "ClientSecret": $client_secret,
-                    "Scope": "openid email",
-                    "SessionCookieName": "AWSELBAuthSessionCookie",
-                    "SessionTimeout": 604800,
-                    "OnUnauthenticatedRequest": "authenticate"
-                  }
-                },
-                {
-                  "Type": "forward",
-                  "Order": 2,
-                  "TargetGroupArn": $tg_arn
-                }
-              ]' > /tmp/oidc-actions.json
             aws elbv2 create-rule \
               --listener-arn "$LISTENER_ARN" \
               --priority 10 \
-              --conditions Field=path-pattern,Values='/ourwallboard*' \
+              --conditions Field=path-pattern,Values='/*' \
               --actions file:///tmp/oidc-actions.json
-            rm -f /tmp/oidc-actions.json
             echo "✅ Listener rule created."
           else
-            echo "ℹ️ Listener rule (priority 10) already exists — skipping."
+            aws elbv2 modify-rule \
+              --rule-arn "$EXISTING_RULE" \
+              --conditions Field=path-pattern,Values='/*' \
+              --actions file:///tmp/oidc-actions.json
+            echo "✅ Listener rule updated."
           fi
+          rm -f /tmp/oidc-actions.json
 
       # ── 8. Route 53 A record ────────────────────────────────────────────────
       - name: 📍 Create Route 53 alias A record → ALB

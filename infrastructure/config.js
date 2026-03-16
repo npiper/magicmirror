@@ -8,7 +8,7 @@
 let config = {
     address: "0.0.0.0",
     port: 8080,
-    basePath: "/ourwallboard",
+    basePath: "/",
     ipWhitelist: [],
     useHttps: false,
 
