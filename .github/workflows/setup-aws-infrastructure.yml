@@ -426,11 +426,16 @@ jobs:
               --port 8080 \
               --vpc-id "${{ steps.vpc.outputs.vpc_id }}" \
               --target-type ip \
-              --health-check-path /ourwallboard/ \
+              --health-check-path / \
               --health-check-interval-seconds 30 \
               --healthy-threshold-count 2 \
               --tags Key=project,Value=wallboard \
               --query 'TargetGroups[0].TargetGroupArn' --output text)
+          else
+            # Always ensure health check path is current
+            aws elbv2 modify-target-group \
+              --target-group-arn "$TG_ARN" \
+              --health-check-path /
           fi
           echo "arn=$TG_ARN" >> "$GITHUB_OUTPUT"
 
