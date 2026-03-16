@@ -7,8 +7,8 @@
 
 FROM karsten13/magicmirror:latest
 
-# Grant write access so the entrypoint can run envsubst and write config.js
-RUN chmod a+w /opt/magic_mirror/config
+# Create config dir with write access so entrypoint can run envsubst and write config.js
+RUN mkdir -p /opt/magic_mirror/config && chmod a+w /opt/magic_mirror/config
 
 # Copy wallboard configuration and CSS
 COPY config.js     /opt/magic_mirror/config/config.js.template
