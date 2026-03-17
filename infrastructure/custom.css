@@ -1,1 +1,67 @@
 /* override css here */
+
+/* ── Hide the built-in calendar list view ─────────────────────────────────── */
+/* It is only needed as a data source for MMM-CalendarExt3 */
+.module.calendar {
+    display: none;
+}
+
+/* ── Pink theme ───────────────────────────────────────────────────────────── */
+body {
+    background-color: #1a0010;
+}
+
+.region.top.center .clock .date,
+.region.top.center .clock .time {
+    color: #ff80c0;
+}
+
+.MMM-CalendarExt3 .cx3-header-day {
+    color: #ff80c0;
+    border-bottom: 1px solid #ff4da6;
+}
+
+.MMM-CalendarExt3 .cx3-date-cell {
+    border-right: 1px solid #5c1a3a;
+    min-height: 480px;
+}
+
+.MMM-CalendarExt3 .cx3-cell-date {
+    color: #ff99cc;
+}
+
+.MMM-CalendarExt3 .cx3-event {
+    background-color: #4d0030 !important;
+    border-left: 3px solid #ff4da6 !important;
+    color: #ffe0f0 !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    padding: 1px 3px !important;
+    margin-bottom: 2px !important;
+    height: auto !important;
+    min-height: 22px !important;
+}
+
+.MMM-CalendarExt3 .cx3-event-title {
+    color: #ffe0f0;
+}
+
+.MMM-CalendarExt3 .cx3-event-time {
+    color: #ff99cc;
+    font-size: 12px !important;
+}
+
+.MMM-CalendarExt3 .cx3-overflow {
+    color: #ff4da6;
+    font-weight: bold;
+}
+
+/* Today column highlight */
+.MMM-CalendarExt3 .cx3-date-cell.today {
+    background-color: #2d0020;
+}
+
+/* Weekend day headers */
+.MMM-CalendarExt3 .cx3-header-day.weekend {
+    color: #ff4da6;
+}

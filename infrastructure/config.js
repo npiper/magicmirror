@@ -116,6 +116,42 @@ let config = {
             }
         },
 
+        // ── MMM-CountEvents — countdown to key dates ───────────────────────
+        { module: "MMM-CustomElementTime" },
+        {
+            module: "MMM-CountEvents",
+            position: "top_center",
+            classes: "small",
+            config: {
+                refresh: 1000 * 60 * 60, // update hourly
+                unit: "day",
+                numberOnly: true,
+                events: [
+                    {
+                        title: "🐣 Easter Holidays",
+                        targetTime: "25 Mar 2026"
+                    },
+                    {
+                        title: "🎂 Birthday",
+                        targetTime: "28 Jul 2026",
+                        repeat: "yearly",
+                        ignoreBefore: 1000 * 60 * 60 * 24 * 60
+                    },
+                    {
+                        title: "☀️ Summer Holidays",
+                        targetTime: "18 Jul 2026",
+                        ignoreBefore: 1000 * 60 * 60 * 24 * 60
+                    },
+                    {
+                        title: "🎄 Christmas",
+                        targetTime: "25 Dec 2026",
+                        repeat: "yearly",
+                        ignoreBefore: 1000 * 60 * 60 * 24 * 60
+                    }
+                ]
+            }
+        },
+
         // ── MMM-CalendarExt3 — visual week view with emoji titles ──────────
         {
             module: "MMM-CalendarExt3",
