@@ -7,6 +7,11 @@
 
 FROM karsten13/magicmirror:latest
 
+# Force server-only mode — the entrypoint detects electron is installed and tries to launch
+# it (MM_SCENARIO=electron), but the electron binary is not extracted in headless/ECS builds.
+# Setting MM_SCENARIO=server bypasses that check entirely.
+ENV MM_SCENARIO=server
+
 # Create config dir with write access so entrypoint can run envsubst and write config.js
 RUN mkdir -p /opt/magic_mirror/config && chmod a+w /opt/magic_mirror/config
 
@@ -19,20 +24,6 @@ RUN cd /opt/magic_mirror/modules \
     && git clone https://github.com/MMRIZE/MMM-CalendarExt3.git \
     && cd MMM-CalendarExt3 \
     && npm install --production \
-    && cd /opt/magic_mirror
-
-# Install MMM-CountEvents
-RUN cd /opt/magic_mirror/modules \
-    && git clone https://github.com/MMRIZE/MMM-CountEvents.git \
-    && cd MMM-CountEvents \
-    && npm install --omit=dev --ignore-scripts \
-    && cd /opt/magic_mirror
-
-# Install MMM-CustomElementTime (required by MMM-CountEvents)
-RUN cd /opt/magic_mirror/modules \
-    && git clone https://github.com/MMRIZE/MMM-CustomElementTime.git \
-    && cd MMM-CustomElementTime \
-    && npm install --omit=dev --ignore-scripts \
     && cd /opt/magic_mirror
 
 WORKDIR /opt/magic_mirror
