@@ -114,13 +114,13 @@ jobs:
                 assignPublicIp=ENABLED
               }" \
               --load-balancers "targetGroupArn=${{ vars.ECS_TARGET_GROUP_ARN }},containerName=${CONTAINER_NAME},containerPort=8080" \
-              --health-check-grace-period-seconds 150
+              --health-check-grace-period-seconds 300
           else
             echo "Service $ECS_SERVICE already exists — ensuring grace period is current"
             aws ecs update-service \
               --cluster "$ECS_CLUSTER" \
               --service "$ECS_SERVICE" \
-              --health-check-grace-period-seconds 150 > /dev/null
+              --health-check-grace-period-seconds 300 > /dev/null
           fi
 
       - name: Deploy ECS task definition
