@@ -26,12 +26,8 @@ RUN cd /opt/magic_mirror/modules \
     && npm install --production \
     && cd /opt/magic_mirror
 
-# Install MMM-CustomElementTime (no postinstall, lightweight)
-RUN cd /opt/magic_mirror/modules \
-    && git clone https://github.com/MMRIZE/MMM-CustomElementTime.git \
-    && cd /opt/magic_mirror
-
-# Install MMM-CountEvents (postinstall.sh must be chmod +x before npm install)
+# Install MMM-CountEvents
+# postinstall.sh clones MMM-CustomElementTime automatically — do not pre-clone it.
 RUN cd /opt/magic_mirror/modules \
     && git clone https://github.com/MMRIZE/MMM-CountEvents.git \
     && cd MMM-CountEvents \
