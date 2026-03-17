@@ -25,12 +25,14 @@ RUN cd /opt/magic_mirror/modules \
 RUN cd /opt/magic_mirror/modules \
     && git clone https://github.com/MMRIZE/MMM-CountEvents.git \
     && cd MMM-CountEvents \
-    && npm install --production \
+    && npm install --omit=dev --ignore-scripts \
     && cd /opt/magic_mirror
 
 # Install MMM-CustomElementTime (required by MMM-CountEvents)
 RUN cd /opt/magic_mirror/modules \
     && git clone https://github.com/MMRIZE/MMM-CustomElementTime.git \
+    && cd MMM-CustomElementTime \
+    && npm install --omit=dev --ignore-scripts \
     && cd /opt/magic_mirror
 
 WORKDIR /opt/magic_mirror
