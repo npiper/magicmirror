@@ -169,11 +169,41 @@ let config = {
                 showWeekNumber: false,
                 useWeather: false,
                 calendarSet: ["family", "personal"],
-                // Prepend emoji to event title based on keyword or school subject code match.
-                // School timetable codes follow the pattern: 9c/Gg2, 9YNE/Ma, 9y/Dr2 etc.
-                // Subject is identified by the letters after the slash.
+                // Prepend emoji to event title based on format:
+                //   New format: "Y9 Subject Room"  e.g. "Y9 Biology Juno", "Whole School Assembly"
+                //   Old format: slash codes        e.g. "9c/Gg2", "9YNE/Ma"
                 eventTransformer: (event) => {
-                    // School subject code mappings — matched against the code after the /
+                    // ── Word-based subjects (new "Y{year} Subject Room" format) ──────
+                    const wordSubjects = [
+                        { keyword: "Assembly",             emoji: "🏫", label: "Assembly" },
+                        { keyword: "Personal Development", emoji: "🌱", label: "Personal Dev" },
+                        { keyword: "Wellbeing",            emoji: "🌿", label: "Wellbeing" },
+                        { keyword: "Biology",              emoji: "🧬", label: "Biology" },
+                        { keyword: "Chemistry",            emoji: "⚗️", label: "Chemistry" },
+                        { keyword: "Physics",              emoji: "⚡", label: "Physics" },
+                        { keyword: "Maths",                emoji: "➗", label: "Maths" },
+                        { keyword: "English",              emoji: "📖", label: "English" },
+                        { keyword: "Geography",            emoji: "🌍", label: "Geography" },
+                        { keyword: "History",              emoji: "🏛️", label: "History" },
+                        { keyword: "Art",                  emoji: "🎨", label: "Art" },
+                        { keyword: "Drama",                emoji: "🎭", label: "Drama" },
+                        { keyword: "Music",                emoji: "🎵", label: "Music" },
+                        { keyword: "Physical Education",   emoji: "🏃", label: "PE" },
+                        { keyword: "French",               emoji: "🇫🇷", label: "French" },
+                        { keyword: "Spanish",              emoji: "🇪🇸", label: "Spanish" },
+                        { keyword: "Computing",            emoji: "💻", label: "Computing" },
+                        { keyword: "Science",              emoji: "🔬", label: "Science" },
+                        { keyword: "Design Technology",    emoji: "🔧", label: "Design Tech" },
+                        { keyword: "Design Tech",          emoji: "🔧", label: "Design Tech" },
+                        { keyword: "Religious",            emoji: "🙏", label: "RE" },
+                        { keyword: "Tutor",                emoji: "🏠", label: "Tutor Time" },
+                        { keyword: "Business",             emoji: "💼", label: "Business" },
+                        { keyword: "Psychology",           emoji: "🧠", label: "Psychology" },
+                        { keyword: "Latin",                emoji: "🏺", label: "Latin" },
+                        { keyword: "PE",                   emoji: "🏃", label: "PE" },
+                        { keyword: "RE",                   emoji: "🙏", label: "RE" },
+                    ];
+                    // ── Old slash-code mappings (9c/Gg2, 9YNE/Ma etc.) ───────────────
                     const subjectCodes = [
                         { pattern: /\/Ma/i,   emoji: "➗", label: "Maths" },
                         { pattern: /\/En/i,   emoji: "📖", label: "English" },
@@ -198,7 +228,7 @@ let config = {
                         { pattern: /\/La/i,   emoji: "🏺", label: "Latin" },
                         { pattern: /\/Tt/i,   emoji: "🏠", label: "Tutor Time" },
                     ];
-                    // General keyword mappings
+                    // ── General keyword mappings ─────────────────────────────────────
                     const keywords = [
                         { keyword: "Football",      emoji: "⚽" },
                         { keyword: "Swimming",      emoji: "🏊" },
@@ -210,26 +240,45 @@ let config = {
                         { keyword: "Dentist",       emoji: "🦷" },
                         { keyword: "Orthodontist",  emoji: "🦷" },
                         { keyword: "Doctor",        emoji: "🩺" },
-                        { keyword: "Dr",            emoji: "🩺" },
                         { keyword: "Breakfast",     emoji: "🥣" },
                         { keyword: "Exercise",      emoji: "🏃" },
                         { keyword: "Playdate",      emoji: "🎮" },
                         { keyword: "School",        emoji: "🏫" },
                     ];
+
                     const title = event.title || "";
-                    // Standalone homeroom entry — just a form group like "9B" with no slash
+
+                    // ── "Y{year} Subject Room" or "Whole School ..." ─────────────────
+                    // Strip year/school prefix, match subject keyword → emoji + label
+                    const yearPrefix = title.match(/^(?:Y\d+|Whole School)\s+(.*)/i);
+                    if (yearPrefix) {
+                        const stripped = yearPrefix[1].trim();
+                        for (const { keyword, emoji, label } of wordSubjects) {
+                            if (stripped.toLowerCase().includes(keyword.toLowerCase())) {
+                                event.title = emoji + " " + label;
+                                return event;
+                            }
+                        }
+                        // No subject matched — strip prefix but show remaining text
+                        event.title = "📅 " + stripped;
+                        return event;
+                    }
+
+                    // ── Standalone homeroom entry like "9B" ──────────────────────────
                     if (/^\d+[A-Z]+$/.test(title.trim())) {
                         event.title = "🏠 " + title;
                         return event;
                     }
-                    // Try school subject code first (pattern: digits+letters/SubjectCode+digits)
+
+                    // ── Old slash-code format: 9c/Gg2, 9YNE/Ma etc. ─────────────────
                     for (const { pattern, emoji, label } of subjectCodes) {
                         if (pattern.test(title)) {
                             event.title = emoji + " " + label;
                             return event;
                         }
                     }
-                    // Fall back to keyword match
+
+                    // ── General keyword fallback ─────────────────────────────────────
                     for (const { keyword, emoji } of keywords) {
                         if (title.toLowerCase().includes(keyword.toLowerCase())) {
                             event.title = emoji + " " + title;
