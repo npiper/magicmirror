@@ -35,4 +35,5 @@ RUN cd /opt/magic_mirror/modules \
     && npm install --production \
     && cd /opt/magic_mirror
 
+
 WORKDIR /opt/magic_mirror

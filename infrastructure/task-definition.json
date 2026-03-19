@@ -11,6 +11,12 @@
             "name": "magicmirror-wallboard",
             "image": "<ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/magicmirror-wallboard:latest",
             "essential": true,
+            "environment": [
+                {
+                    "name": "MM_SHOW_CURSOR",
+                    "value": "true"
+                }
+            ],
             "portMappings": [
                 {
                     "containerPort": 8080,

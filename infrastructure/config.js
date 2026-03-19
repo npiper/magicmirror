@@ -61,10 +61,9 @@ let config = {
                 lon: -0.3373,
                 apiKey: "${OPENWEATHER_API_KEY}",
                 units: "metric",
-                showWindDirection: true,
-                showWindDirectionAsArrow: true,
-                showHumidity: true,
-                showFeelsLike: true
+                showWindDirection: false,
+                showHumidity: false,
+                showFeelsLike: false
             }
         },
 
@@ -82,7 +81,7 @@ let config = {
                 lon: -0.3373,
                 apiKey: "${OPENWEATHER_API_KEY}",
                 units: "metric",
-                maxNumberOfDays: 3,
+                maxNumberOfDays: 2,
                 showRainAmount: true,
                 fade: false,
                 colored: false,
@@ -129,7 +128,8 @@ let config = {
                 events: [
                     {
                         title: "🐣 Easter Holidays",
-                        targetTime: "25 Mar 2026"
+                        targetTime: "25 Mar 2026",
+                        ignoreBefore: 1000 * 60 * 60 * 24 * 60
                     },
                     {
                         title: "🎂 Birthday",
@@ -163,9 +163,9 @@ let config = {
                 weeksInView: 1,
                 firstDayOfWeek: 1,
                 locale: "en-GB",
-                fontSize: "18px",
-                eventHeight: "24px",
-                maxEventLines: 12,
+                fontSize: "20px",
+                eventHeight: "30px",
+                maxEventLines: 8,
                 showWeekNumber: false,
                 useWeather: false,
                 calendarSet: ["family", "personal"],
@@ -299,7 +299,8 @@ let config = {
         {
             module: "updatenotification",
             position: "top_bar"
-        }
+        },
+
     ]
 };
 

@@ -19,6 +19,7 @@ body {
 .MMM-CalendarExt3 .cx3-header-day {
     color: #ff80c0;
     border-bottom: 1px solid #ff4da6;
+    font-size: 20px;
 }
 
 .MMM-CalendarExt3 .cx3-date-cell {
