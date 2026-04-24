@@ -23,8 +23,8 @@ let config = {
     timeFormat: 24,
     units: "metric",
 
-    modules: [{ module: "MMM-mmpm" },
-        // ── Clock — local (UK) ──────────────────────────────────────────────
+    modules: [
+        // ── Clock — local (UK) ─────────────────────────────────────────────
         {
             module: "clock",
             position: "top_center",
