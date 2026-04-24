@@ -29,12 +29,16 @@ A self-hosted visual daily timetable displayed on a tablet or TV in the house, d
 
 **Docker image in use:** [`karsten13/magicmirror`](https://hub.docker.com/r/karsten13/magicmirror) (unofficial but well-maintained image used by this repo)
 
+
+https://khassel.gitlab.io/magicmirror/installation/
+
 **Relevant modules for this use case:**
 
 | Module | Purpose |
 |---|---|
 | `MMM-Calendar` (built-in) | Shows calendar events from iCal / Google Calendar |
 | [`MMM-CalendarExt3`](https://github.com/MMRIZE/MMM-CalendarExt3) | Rich daily/weekly visual calendar view — large tiles, better for kids |
+| [`MMM-Flashcards`](https://github.com/dixyz/MMM-Flashcards) | Rotating vocabulary flashcards — configurable collections of question/answer pairs |
 
 Icon/emoji mapping is done in the MagicMirror config file — keywords in event titles (e.g. `School`, `Football`) can be mapped to emojis or icons in the module configuration.
 
@@ -474,6 +478,7 @@ Add to the [Pre-requisites](#pre-requisites-one-time-manual-setup) list:
 - [x] Update Docker Desktop to 4.22.0+
 - [x] Enable MMPM (`MM_MMPM="mmpm"` in `run/.env`)
 - [x] Wire `GCAL_SECRET_URL` through compose into container
+- [x] Install and configure `MMM-Flashcards` with German vocabulary collection
 - [ ] Start stack locally: `cd run && docker compose up -d`
 - [ ] Use MMPM at `http://localhost:7890` to install `MMM-CalendarExt3`
 - [ ] Verify wallboard at `http://localhost:8080` shows calendar events
@@ -493,6 +498,8 @@ Add to the [Pre-requisites](#pre-requisites-one-time-manual-setup) list:
 - [MagicMirror² official docs](https://docs.magicmirror.builders/)
 - [karsten13/magicmirror Docker Hub](https://hub.docker.com/r/karsten13/magicmirror)
 - [MMM-CalendarExt3 GitHub](https://github.com/MMRIZE/MMM-CalendarExt3)
+- [MMM-Flashcards GitHub](https://github.com/dixyz/MMM-Flashcards)
+- [MMM-Flashcards forum thread](https://forum.magicmirror.builders/topic/12962/mmm-flashcards-module-to-help-you-learn)
 
 
 ---
@@ -594,3 +601,80 @@ cd run && docker compose down && docker compose up -d
 ```
 
 Photos added to the Dropbox folder on any phone, tablet, or computer appear on the wallboard automatically once synced.
+
+---
+
+### C. MMM-Flashcards — Vocabulary Flashcards
+
+Displays a random flashcard from one or more configurable collections. Useful for language learning, maths facts, geography — anything that benefits from spaced repetition on a passive display.
+
+- **Forum thread:** https://forum.magicmirror.builders/topic/12962/mmm-flashcards-module-to-help-you-learn
+- **GitHub:** https://github.com/dixyz/MMM-Flashcards
+
+#### Step 1 — Install the module
+
+```bash
+cd mounts/modules
+git clone https://github.com/dixyz/MMM-Flashcards.git
+```
+
+No npm install step is required.
+
+#### Step 2 — Add to config.js
+
+The module is already configured in `mounts/config/config.js` (see the `MMM-Flashcards` section). The initial collection is `german_basics`, with ~40 cards covering:
+
+- Greetings and polite phrases
+- Numbers 1–10
+- Days of the week
+- Colours
+
+Each card is shown for 8 seconds before rotating to the next random card.
+
+**Config reference:**
+
+```js
+{
+    module: "MMM-Flashcards",
+    position: "bottom_left",
+    header: "🇩🇪 German Vocabulary",
+    config: {
+        displayTime: 8000,           // milliseconds per card
+        activeCollection: "german_basics",
+        collections: {
+            german_basics: [
+                { question: "Hallo",         answer: "Hello" },
+                { question: "Guten Morgen",  answer: "Good morning" },
+                // … add more cards here
+            ]
+        }
+    }
+}
+```
+
+#### Adding more collections
+
+Multiple collections can coexist in the `collections` object. Switch between them by changing `activeCollection`:
+
+```js
+collections: {
+    german_basics: [ /* ... */ ],
+    german_food:   [
+        { question: "das Brot",    answer: "bread" },
+        { question: "das Wasser",  answer: "water" },
+        { question: "der Apfel",   answer: "apple" },
+    ],
+    french_basics: [
+        { question: "Bonjour",     answer: "Hello" },
+        { question: "Merci",       answer: "Thank you" },
+    ]
+}
+```
+
+#### Step 3 — Restart
+
+```bash
+cd run && docker compose down && docker compose up -d
+```
+
+The flashcard panel appears at `bottom_left` and rotates automatically with no user interaction needed.
