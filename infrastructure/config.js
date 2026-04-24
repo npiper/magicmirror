@@ -1,17 +1,20 @@
-/* MagicMirror² config — Wallboard (AWS deployment)
+/* MagicMirror² config — Wallboard
  *
- * This file is committed and safe — no secrets are hardcoded.
- * Secrets are injected at runtime by ECS from AWS Secrets Manager.
- * envsubst is run at container startup to substitute:
- *   ${GCAL_SECRET_URL}       — family calendar iCal URL
- *   ${GCAL_NP_SECRET_URL}    — Neil's personal calendar iCal URL
- *   ${OPENWEATHER_API_KEY}   — OpenWeatherMap API key
+ * Two env vars must be set before starting the container:
+ *   GCAL_SECRET_URL     — family shared calendar iCal secret URL
+ *   GCAL_NP_SECRET_URL  — Neil's personal calendar (neil.piper@gmail.com) iCal secret URL
+ *
+ * Local dev:  export GCAL_SECRET_URL="..." and GCAL_NP_SECRET_URL="..." in ~/.profile or ~/.zshrc
+ * CI/CD:      stored as GitHub Actions repository secrets
+ *
+ * The https://calendar.google.com/calendar/ical/fc24e0a73460cb68992e8143d4be670578499950ce37126e0a5bb499ebbf2130%40group.calendar.google.com/private-ff1cfb5684fef05660b5b12c786a151b/basic.ics and https://calendar.google.com/calendar/ical/neil.piper%40gmail.com/private-72628581e63fdcb02afbb8f98f25629c/basic.ics placeholders are substituted
+ * at container startup by the post_start hook in run/includes/base.yaml.
  */
 let config = {
-    address: "0.0.0.0",
+    address: "0.0.0.0",   // listen on all interfaces so the browser on the TV can connect
     port: 8080,
     basePath: "/",
-    ipWhitelist: [],
+    ipWhitelist: [],       // empty = allow all IPs on the local network
     useHttps: false,
 
     language: "en",
@@ -20,8 +23,8 @@ let config = {
     timeFormat: 24,
     units: "metric",
 
-    modules: [
-        // ── Clock — local (UK) ─────────────────────────────────────────────
+    modules: [{ module: "MMM-mmpm" },
+        // ── Clock — local (UK) ──────────────────────────────────────────────
         {
             module: "clock",
             position: "top_center",
@@ -91,6 +94,7 @@ let config = {
 
         // ── Calendar data source (required by MMM-CalendarExt3) ────────────
         // Fetches events from both calendars and broadcasts them.
+        // Placeholders are substituted at container startup by post_start.
         {
             module: "calendar",
             position: "top_left",
@@ -123,31 +127,34 @@ let config = {
             classes: "small",
             config: {
                 refresh: 1000 * 60 * 60, // update hourly
-                unit: "day",
-                numberOnly: true,
+                unit: "day",             // show days only — keeps it compact
+                numberOnly: true,        // show just the number
                 events: [
-                    {
-                        title: "🐣 Easter Holidays",
-                        targetTime: "25 Mar 2026",
-                        ignoreBefore: 1000 * 60 * 60 * 24 * 60
-                    },
                     {
                         title: "🎂 Birthday",
                         targetTime: "28 Jul 2026",
                         repeat: "yearly",
-                        ignoreBefore: 1000 * 60 * 60 * 24 * 60
+                        // only show within 60 days of the birthday
+                        ignoreBefore: 1000 * 60 * 60 * 24 * 60,
+                    },
+                    {
+                        title: "🐣 Easter Holidays",
+                        targetTime: "1 Apr 2027",
+                        ignoreBefore: 1000 * 60 * 60 * 24 * 60,
                     },
                     {
                         title: "☀️ Summer Holidays",
                         targetTime: "18 Jul 2026",
-                        ignoreBefore: 1000 * 60 * 60 * 24 * 60
+                        // only show within 60 days
+                        ignoreBefore: 1000 * 60 * 60 * 24 * 60,
                     },
                     {
                         title: "🎄 Christmas",
                         targetTime: "25 Dec 2026",
                         repeat: "yearly",
-                        ignoreBefore: 1000 * 60 * 60 * 24 * 60
-                    }
+                        // only show within 60 days of Christmas
+                        ignoreBefore: 1000 * 60 * 60 * 24 * 60,
+                    },
                 ]
             }
         },
@@ -230,6 +237,28 @@ let config = {
                     ];
                     // ── General keyword mappings ─────────────────────────────────────
                     const keywords = [
+                        // Subjects — matches "Maths - Prepare", "English - Prepare" etc.
+                        { keyword: "Maths",                emoji: "➗" },
+                        { keyword: "English",              emoji: "📖" },
+                        { keyword: "Biology",              emoji: "🧬" },
+                        { keyword: "Chemistry",            emoji: "⚗️" },
+                        { keyword: "Physics",              emoji: "⚡" },
+                        { keyword: "Geography",            emoji: "🌍" },
+                        { keyword: "History",              emoji: "🏛️" },
+                        { keyword: "Science",              emoji: "🔬" },
+                        { keyword: "French",               emoji: "🇫🇷" },
+                        { keyword: "Spanish",              emoji: "🇪🇸" },
+                        { keyword: "Computing",            emoji: "💻" },
+                        { keyword: "Drama",                emoji: "🎭" },
+                        { keyword: "Music",                emoji: "🎵" },
+                        { keyword: "Art",                  emoji: "🎨" },
+                        { keyword: "Latin",                emoji: "🏺" },
+                        { keyword: "Business",             emoji: "💼" },
+                        { keyword: "Psychology",           emoji: "🧠" },
+                        { keyword: "Design Technology",    emoji: "🔧" },
+                        { keyword: "Design Tech",          emoji: "🔧" },
+                        { keyword: "Religious",            emoji: "🙏" },
+                        // General
                         { keyword: "Football",      emoji: "⚽" },
                         { keyword: "Swimming",      emoji: "🏊" },
                         { keyword: "Dinner",        emoji: "🍽️" },
@@ -249,7 +278,6 @@ let config = {
                     const title = event.title || "";
 
                     // ── "Y{year} Subject Room" or "Whole School ..." ─────────────────
-                    // Strip year/school prefix, match subject keyword → emoji + label
                     const yearPrefix = title.match(/^(?:Y\d+|Whole School)\s+(.*)/i);
                     if (yearPrefix) {
                         const stripped = yearPrefix[1].trim();
@@ -259,7 +287,6 @@ let config = {
                                 return event;
                             }
                         }
-                        // No subject matched — strip prefix but show remaining text
                         event.title = "📅 " + stripped;
                         return event;
                     }
@@ -290,12 +317,13 @@ let config = {
             }
         },
 
-        // ── Alert ─────────────────────────────────────────────────────────
+
+        // ── Alert (required by some modules) ──────────────────────────────
         {
             module: "alert"
         },
 
-        // ── Update notification ───────────────────────────────────────────
+        // ── Update notification (optional — remove if not wanted) ─────────
         {
             module: "updatenotification",
             position: "top_bar"
