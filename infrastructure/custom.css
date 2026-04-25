@@ -16,21 +16,22 @@ body {
     color: #ff80c0;
 }
 
-.MMM-CalendarExt3 .cx3-header-day {
+.CX3 .cellHeader .cellDate {
     color: #ff80c0;
     border-bottom: 1px solid #ff4da6;
+    font-size: 20px;
 }
 
-.MMM-CalendarExt3 .cx3-date-cell {
+.CX3 .cell {
     border-right: 1px solid #5c1a3a;
     min-height: 480px;
 }
 
-.MMM-CalendarExt3 .cx3-cell-date {
+.CX3 .cellDate {
     color: #ff99cc;
 }
 
-.MMM-CalendarExt3 .cx3-event {
+.CX3 .event {
     background-color: #4d0030 !important;
     border-left: 3px solid #ff4da6 !important;
     color: #ffe0f0 !important;
@@ -42,26 +43,27 @@ body {
     min-height: 22px !important;
 }
 
-.MMM-CalendarExt3 .cx3-event-title {
+.CX3 .event .headline .title {
     color: #ffe0f0;
 }
 
-.MMM-CalendarExt3 .cx3-event-time {
+.CX3 .event .headline .time,
+.CX3 .event .time {
     color: #ff99cc;
     font-size: 12px !important;
 }
 
-.MMM-CalendarExt3 .cx3-overflow {
+.CX3 .cell.hasMore::after {
     color: #ff4da6;
     font-weight: bold;
 }
 
 /* Today column highlight */
-.MMM-CalendarExt3 .cx3-date-cell.today {
+.CX3 .cell.today {
     background-color: #2d0020;
 }
 
 /* Weekend day headers */
-.MMM-CalendarExt3 .cx3-header-day.weekend {
+.CX3 .weekend .cellHeader .cellDate {
     color: #ff4da6;
 }
